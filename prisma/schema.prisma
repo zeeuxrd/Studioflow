@@ -1,0 +1,130 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ------------------------------------------------------
+// ENUMS
+// ------------------------------------------------------
+
+enum TonePreference {
+  casual
+  professional
+  educational
+}
+
+enum PlatformType {
+  TikTok
+  X
+  Instagram
+  LinkedIn
+}
+
+enum MonetizationGoal {
+  grow_audience
+  make_money
+  stay_consistent
+}
+
+enum IdeaStatus {
+  saved
+  used
+  archived
+}
+
+enum PostStatus {
+  draft
+  exported
+  posted
+}
+
+enum ProductType {
+  ebook
+  checklist
+  course
+  template
+}
+
+enum ProductStatus {
+  draft
+  published
+}
+
+enum ConversionType {
+  product_creation
+  purchase
+}
+
+// ------------------------------------------------------
+// MODELS
+// ------------------------------------------------------
+
+model User {
+  user_id           String            @id @default(uuid())
+  niche             String?
+  tone_preference   TonePreference    @default(casual)
+  platform_focus    PlatformType      @default(X)
+  monetization_goal MonetizationGoal  @default(grow_audience)
+  created_at        DateTime          @default(now())
+
+  ideas             ContentIdea[]
+  trackingEvents    MonetizationTracking[]
+}
+
+model ContentIdea {
+  idea_id    String      @id @default(uuid())
+  user_id    String
+  niche      String
+  idea_text  String
+  category   String
+  status     IdeaStatus  @default(saved)
+  created_at DateTime    @default(now())
+
+  user       User          @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+  posts      ContentPost[]
+}
+
+model ContentPost {
+  post_id                     String      @id @default(uuid())
+  idea_id                     String
+  platform_type               PlatformType
+  content_body                String
+  engagement_prediction_score Float?
+  status                      PostStatus  @default(draft)
+
+  idea                        ContentIdea         @relation(fields: [idea_id], references: [idea_id], onDelete: Cascade)
+  products                    ProductDefinition[]
+}
+
+model ProductDefinition {
+  product_id                    String        @id @default(uuid())
+  source_post_id                String
+  product_type                  ProductType
+  title                         String
+  content_structure             Json
+  monetization_price_suggestion Float
+  status                        ProductStatus @default(draft)
+
+  source_post                   ContentPost   @relation(fields: [source_post_id], references: [post_id], onDelete: Cascade)
+}
+
+model MonetizationTracking {
+  tracking_id      String         @id @default(uuid())
+  user_id          String
+  content_id       String         // Polymorphic or loose reference to Post/Product ID
+  conversion_type  ConversionType
+  revenue_estimate Float?
+  created_at       DateTime       @default(now())
+
+  user             User           @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+}
