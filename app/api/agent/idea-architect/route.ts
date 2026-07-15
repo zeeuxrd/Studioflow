@@ -7,34 +7,37 @@ import { prisma } from '@/lib/prisma';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { user_id, niche, tone_preference } = body;
+    const { user_id, niche, format_style } = body;
 
-    if (!user_id || !niche || !tone_preference) {
+    if (!user_id || !niche) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
+    const activeTone = 'casual';
     const startTime = Date.now();
 
-    // Ensure the pseudonymous user exists in the database before saving ideas
+    // Ensure the user exists in the database before saving ideas
     await prisma.user.upsert({
-      where: { user_id: user_id },
+      where: { id: user_id },
       update: {},
       create: {
-        user_id: user_id,
+        id: user_id,
         niche: niche,
-        // Default to casual if an invalid enum string is sent
-        tone_preference: ['casual', 'professional', 'educational'].includes(tone_preference) 
-          ? tone_preference 
-          : 'casual',
+        tone_preference: activeTone,
       }
     });
+
+    let styleInstruction = "";
+    if (format_style && format_style !== 'all') {
+      styleInstruction = `Ensure all generated content ideas strictly follow the '${format_style}' format style. For example, if 'how-to', structure them as actionable tutorials; if 'controversial', focus on counter-intuitive or polarizing perspectives; if 'listicle', frame them as numbered points; if 'story', frame them as narratives.`;
+    }
 
     // Use the Vercel AI SDK to generate structured JSON via DeepSeek
     const { object } = await generateObject({
       model: deepseek('deepseek-chat'),
-      system: `You are IdeaArchitect. Your goal is to generate 3 highly engaging, platform-ready content ideas based on the user's niche and tone. 
+      system: `You are IdeaArchitect. Your goal is to generate exactly 1 highly engaging, platform-ready content idea based on the user's niche. 
       Output MUST be valid JSON matching the provided schema. Do not generate generic advice, be specific, creative, and action-oriented.`,
-      prompt: `Niche: ${niche}\nTone: ${tone_preference}\nGenerate 3 brilliant content ideas that this creator can post.`,
+      prompt: `Niche: ${niche}\n${styleInstruction}\nGenerate exactly 1 brilliant content idea that this creator can post.`,
       schema: z.object({
         ideas: z.array(z.object({
           idea_text: z.string().describe("The core hook and description of the content idea. Keep it under 2 sentences."),

@@ -70,8 +70,13 @@ enum ConversionType {
 // ------------------------------------------------------
 
 model User {
-  user_id           String            @id @default(uuid())
-  niche             String?
+  id            String            @id @default(uuid())
+  name          String?
+  email         String?           @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  niche         String?
   tone_preference   TonePreference    @default(casual)
   platform_focus    PlatformType      @default(X)
   monetization_goal MonetizationGoal  @default(grow_audience)
@@ -79,6 +84,8 @@ model User {
 
   ideas             ContentIdea[]
   trackingEvents    MonetizationTracking[]
+  accounts          Account[]
+  sessions          Session[]
 }
 
 model ContentIdea {
@@ -90,7 +97,7 @@ model ContentIdea {
   status     IdeaStatus  @default(saved)
   created_at DateTime    @default(now())
 
-  user       User          @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+  user       User          @relation(fields: [user_id], references: [id], onDelete: Cascade)
   posts      ContentPost[]
 }
 
@@ -101,6 +108,7 @@ model ContentPost {
   content_body                String
   engagement_prediction_score Float?
   status                      PostStatus  @default(draft)
+  refinement_history          Json        @default("[]")
 
   idea                        ContentIdea         @relation(fields: [idea_id], references: [idea_id], onDelete: Cascade)
   products                    ProductDefinition[]
@@ -114,6 +122,7 @@ model ProductDefinition {
   content_structure             Json
   monetization_price_suggestion Float
   status                        ProductStatus @default(draft)
+  refinement_history            Json          @default("[]")
 
   source_post                   ContentPost   @relation(fields: [source_post_id], references: [post_id], onDelete: Cascade)
 }
@@ -121,10 +130,45 @@ model ProductDefinition {
 model MonetizationTracking {
   tracking_id      String         @id @default(uuid())
   user_id          String
-  content_id       String         // Polymorphic or loose reference to Post/Product ID
+  content_id       String
   conversion_type  ConversionType
   revenue_estimate Float?
   created_at       DateTime       @default(now())
 
-  user             User           @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
+  user             User           @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model Account {
+  id              String  @id @default(cuid())
+  userId          String
+  type            String
+  provider        String
+  providerAccountId String
+  refresh_token   String? @db.Text
+  access_token    String? @db.Text
+  expires_at      Int?
+  token_type      String?
+  scope           String?
+  id_token        String? @db.Text
+  session_state   String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
 }

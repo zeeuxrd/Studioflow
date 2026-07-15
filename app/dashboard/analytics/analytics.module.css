@@ -1,146 +1,317 @@
-.container {
-  min-height: 100vh;
-  background-color: var(--color-background);
-  color: var(--color-on-background);
-  padding: 60px 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  font-family: var(--typography-body-large-font-family);
-}
-
-.header {
-  text-align: center;
-  margin-bottom: 40px;
-}
-
-.title {
-  font-family: var(--typography-display-small-font-family);
-  font-size: var(--typography-display-small-font-size);
-  font-weight: 800;
-  color: var(--color-primary);
-  margin-bottom: 12px;
-}
+/* ── Analytics & Revenue Tracking Overhaul Styles ── */
 
 .metricsGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 24px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
   width: 100%;
-  max-width: 1000px;
-  margin-bottom: 40px;
+  max-width: 1200px;
+  margin-bottom: 18px;
 }
 
 .metricCard {
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-outline-variant);
-  border-radius: 24px;
-  padding: 32px;
-  text-align: center;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  background-color: var(--color-background);
+  border: var(--card-border-width, 1px) solid color-mix(in srgb, var(--color-outline-variant) 60%, transparent);
+  border-radius: 10px;
+  padding: 6px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  transition: all 0.2s ease;
 }
 
-.metricLabel {
-  font-size: var(--typography-title-small-font-size);
-  color: var(--color-on-surface-variant);
-  margin-bottom: 12px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
+.metricCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
-.metricValue {
-  font-size: var(--typography-display-medium-font-size);
-  font-weight: 800;
-  color: var(--color-on-surface);
-}
-
-.metricValuePrimary {
-  color: var(--color-primary);
-}
-
-.feedContainer {
-  width: 100%;
-  max-width: 1000px;
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-outline-variant);
-  border-radius: 24px;
-  padding: 32px;
-}
-
-.feedTitle {
-  font-size: var(--typography-title-medium-font-size);
-  font-weight: 700;
-  color: var(--color-on-surface);
-  margin-bottom: 24px;
-  border-bottom: 1px solid var(--color-outline-variant);
-  padding-bottom: 16px;
-}
-
-.feedItem {
+.metricCardHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 0;
-  border-bottom: 1px solid color-mix(in srgb, var(--color-outline-variant) 50%, transparent);
 }
 
-.feedItem:last-child {
-  border-bottom: none;
+.metricLabel {
+  font-size: 12px;
+  font-weight: 550;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.8;
 }
 
-.feedIcon {
-  width: 40px;
-  height: 40px;
+.metricDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.dotGreen {
+  background-color: #2e7d32;
+}
+
+.dotBlue {
+  background-color: var(--color-primary);
+}
+
+.dotOrange {
+  background-color: #ef6c00;
+}
+
+.metricValue {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--color-on-surface);
+  line-height: 1.1;
+}
+
+.metricValuePrimary {
+  color: var(--color-on-surface);
+}
+
+.metricSubtitle {
+  font-size: 11px;
+  color: var(--color-on-surface-variant);
+  opacity: 0.6;
+  margin: 0;
+}
+
+/* ── Split Grid Pane Layout ── */
+.splitLayout {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  max-width: 1200px;
+  align-items: flex-start;
+}
+
+.leftCol {
+  width: calc((100% - 20px) / 3);
+  min-width: calc((100% - 20px) / 3);
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.rightCol {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* Info and Recent Activity Cards */
+.infoCard {
+  background-color: var(--color-surface);
+  border: var(--card-border-width, 1px) solid color-mix(in srgb, var(--color-outline-variant) 60%, transparent);
+  border-radius: 10px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.infoTitle {
+  font-size: var(--typography-title-medium-font-size);
+  font-weight: 700;
+  color: var(--color-on-surface);
+  margin: 0;
+}
+
+.profileHeader {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 4px;
+}
+
+.profileAvatar {
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   background-color: var(--color-primary-container);
   color: var(--color-on-primary-container);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.2rem;
-  margin-right: 16px;
+  font-weight: 700;
+  font-size: 16px;
 }
 
-.feedInfo {
+.profileNameSec {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.profileName {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--color-on-surface);
+  line-height: 1;
+}
+
+.profileEmail {
+  font-size: 12px;
+  color: var(--color-on-surface-variant);
+  opacity: 0.8;
+  line-height: 1;
+}
+
+.infoField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-top: 1px solid var(--color-outline-variant);
+  padding-top: 10px;
+}
+
+.infoField:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.infoLabel {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--color-on-surface-variant);
+  opacity: 0.6;
+}
+
+.infoValue {
+  font-size: 13px;
+  color: var(--color-on-surface);
+  font-weight: 600;
+  line-height: 0.72;
+}
+
+/* Activity Feed Style */
+.activityList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.activityItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.activityIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.activityIconPurchase {
+  background-color: color-mix(in srgb, #2e7d32 12%, transparent);
+  color: #2e7d32;
+}
+
+.activityIconCreate {
+  background-color: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  color: var(--color-primary);
+}
+
+.activityDetails {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 
-.feedDesc {
-  font-size: var(--typography-body-medium-font-size);
+.activityText {
+  font-size: 13px;
   font-weight: 600;
   color: var(--color-on-surface);
-  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.feedTime {
-  font-size: var(--typography-body-small-font-size);
+.activitySubText {
+  font-size: 11px;
   color: var(--color-on-surface-variant);
+  opacity: 0.6;
 }
 
-.feedRevenue {
-  font-size: var(--typography-title-small-font-size);
-  font-weight: 800;
-  color: var(--color-secondary);
+.activityActionRow {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+  border-top: 1px solid var(--color-outline-variant);
+  padding-top: 16px;
 }
 
-.backBtn {
-  background-color: transparent;
-  color: var(--color-on-surface-variant);
+.btnSecondary {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
   border: 1px solid var(--color-outline);
   border-radius: 100px;
-  padding: 8px 16px;
+  background: transparent;
+  color: var(--color-on-surface);
+  font-size: 13px;
   font-weight: 600;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  transition: all 0.2s ease;
-  margin-bottom: 24px;
-  align-self: flex-start;
-  margin-left: max(0px, calc((100% - 1000px) / 2));
+  cursor: pointer;
+  transition: background 0.2s ease;
 }
 
-.backBtn:hover {
-  background-color: var(--color-surface-variant);
-  color: var(--color-on-surface);
+.btnSecondary:hover {
+  background-color: color-mix(in srgb, var(--color-on-surface) 8%, transparent);
+}
+
+.btnPrimary {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 100px;
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.btnPrimary:hover {
+  background-color: color-mix(in srgb, var(--color-on-primary) 8%, var(--color-primary));
+}
+
+/* Status text coloring mapping */
+.statusCompleted {
+  color: #2e7d32;
+  font-weight: 600;
+}
+
+.statusPublished {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+/* Tablet / Mobile responsive behavior */
+@media (max-width: 900px) {
+  .splitLayout {
+    flex-direction: column;
+  gap: 10px;
+  }
+  
+  .leftCol {
+    width: 100%;
+  }
+
+  .metricsGrid {
+    grid-template-columns: 1fr;
+  }
 }

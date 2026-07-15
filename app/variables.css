@@ -5,8 +5,8 @@
   --color-key-tertiary: hsl(318, 49%, 17%);
   --color-key-neutral: hsl(0, 0%, 54%);
   --color-key-neutral-variant: hsl(0, 4%, 38%);
-  --color-key-page-background: #FFFDF3;
-  --color-key-text-color: #000000;
+  --color-key-page-background: #f9f9f9;
+  --color-key-text-color: #1A1A1A;
   --color-palette-primary-0: hsl(0, 0%, 0%);
   --color-palette-primary-10: hsl(317, 100%, 12%);
   --color-palette-primary-20: hsl(315, 100%, 19%);
@@ -129,12 +129,12 @@
   --color-error-container: var(--color-palette-error-80);
   --color-on-error-container: var(--color-palette-error-30);
   --color-background: var(--color-key-page-background);
-  --color-on-background: var(--color-key-text-color);
-  --color-surface: var(--color-palette-neutral-98);
-  --color-on-surface: var(--color-key-text-color);
+  --color-on-background: #2a2a2a;
+  --color-surface: var(--color-palette-neutral-100);
+  --color-on-surface: #2a2a2a;
   --color-surface-variant: var(--color-palette-neutral-variant-90);
-  --color-on-surface-variant: #000000;
-  --color-outline: #000000;
+  --color-on-surface-variant: var(--color-palette-neutral-variant-30);
+  --color-outline: var(--color-palette-neutral-variant-50);
   --color-outline-variant: var(--color-palette-neutral-variant-80);
   --color-inverse-surface: var(--color-palette-neutral-20);
   --color-inverse-on-surface: var(--color-palette-neutral-95);
@@ -236,14 +236,14 @@
   --typography-heading-small-paragraph-indent: 0px;
   --typography-heading-small-paragraph-spacing: 0px;
   --typography-heading-small-text-case: none;
-  --typography-display-large-font-size: 56px;
+  --typography-display-large-font-size: 75.47px;
   --typography-display-large-text-decoration: none;
   --typography-display-large-font-family: Helvetica;
   --typography-display-large-font-weight: 700;
   --typography-display-large-font-style: normal;
   --typography-display-large-font-stretch: normal;
   --typography-display-large-letter-spacing: -3.36px;
-  --typography-display-large-line-height: 84px;
+  --typography-display-large-line-height: 72.3px;
   --typography-display-large-paragraph-indent: 0px;
   --typography-display-large-paragraph-spacing: 0px;
   --typography-display-large-text-case: none;
@@ -283,9 +283,9 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --color-primary: var(--color-key-primary);
-    --color-on-primary: var(--color-palette-primary-20);
+    --color-on-primary: var(--color-palette-primary-100);
     --color-primary-container: var(--color-palette-primary-30);
     --color-on-primary-container: var(--color-palette-primary-90);
     --color-secondary: var(--color-palette-secondary-80);
@@ -300,9 +300,9 @@
     --color-on-error: var(--color-palette-error-20);
     --color-error-container: var(--color-palette-error-30);
     --color-on-error-container: var(--color-palette-error-90);
-    --color-background: var(--color-key-page-background);
+    --color-background: var(--color-palette-neutral-10);
     --color-on-background: var(--color-palette-neutral-90);
-    --color-surface: var(--color-palette-neutral-6);
+    --color-surface: var(--color-palette-neutral-20);
     --color-on-surface: var(--color-palette-neutral-90);
     --color-surface-variant: var(--color-palette-neutral-variant-30);
     --color-on-surface-variant: var(--color-palette-neutral-variant-80);
@@ -311,12 +311,88 @@
     --color-inverse-surface: var(--color-palette-neutral-90);
     --color-inverse-on-surface: var(--color-palette-neutral-20);
     --color-inverse-primary: var(--color-palette-primary-40);
-    --color-surface-dim: var(--color-palette-neutral-6);
-    --color-surface-bright: var(--color-palette-neutral-24);
-    --color-surface-container-lowest: var(--color-palette-neutral-4);
-    --color-surface-container-low: var(--color-palette-neutral-10);
-    --color-surface-container: var(--color-palette-neutral-12);
-    --color-surface-container-high: var(--color-palette-neutral-17);
-    --color-surface-container-highest: var(--color-palette-neutral-22);
+    --color-surface-dim: var(--color-palette-neutral-10);
+    --color-surface-bright: var(--color-palette-neutral-30);
+    --color-surface-container-lowest: var(--color-palette-neutral-10);
+    --color-surface-container-low: var(--color-palette-neutral-20);
+    --color-surface-container: var(--color-palette-neutral-30);
+    --color-surface-container-high: var(--color-palette-neutral-40);
+    --color-surface-container-highest: var(--color-palette-neutral-50);
   }
+}
+
+/* Explicit dark theme — activated by data-theme="dark" on <html> */
+:root[data-theme="dark"] {
+  --color-primary: var(--color-key-primary);
+  --color-on-primary: var(--color-palette-primary-100);
+  --color-primary-container: var(--color-palette-primary-30);
+  --color-on-primary-container: var(--color-palette-primary-90);
+  --color-secondary: var(--color-palette-secondary-80);
+  --color-on-secondary: var(--color-palette-secondary-20);
+  --color-secondary-container: var(--color-palette-secondary-30);
+  --color-on-secondary-container: var(--color-palette-secondary-90);
+  --color-tertiary: var(--color-palette-tertiary-80);
+  --color-on-tertiary: var(--color-palette-tertiary-20);
+  --color-tertiary-container: var(--color-palette-tertiary-30);
+  --color-on-tertiary-container: var(--color-palette-tertiary-90);
+  --color-error: var(--color-palette-error-80);
+  --color-on-error: var(--color-palette-error-20);
+  --color-error-container: var(--color-palette-error-30);
+  --color-on-error-container: var(--color-palette-error-90);
+  --color-background: var(--color-palette-neutral-10);
+  --color-on-background: var(--color-palette-neutral-90);
+  --color-surface: var(--color-palette-neutral-20);
+  --color-on-surface: var(--color-palette-neutral-90);
+  --color-surface-variant: var(--color-palette-neutral-variant-30);
+  --color-on-surface-variant: var(--color-palette-neutral-variant-80);
+  --color-outline: var(--color-palette-neutral-variant-60);
+  --color-outline-variant: var(--color-palette-neutral-variant-30);
+  --color-inverse-surface: var(--color-palette-neutral-90);
+  --color-inverse-on-surface: var(--color-palette-neutral-20);
+  --color-inverse-primary: var(--color-palette-primary-40);
+  --color-surface-dim: var(--color-palette-neutral-10);
+  --color-surface-bright: var(--color-palette-neutral-30);
+  --color-surface-container-lowest: var(--color-palette-neutral-10);
+  --color-surface-container-low: var(--color-palette-neutral-20);
+  --color-surface-container: var(--color-palette-neutral-30);
+  --color-surface-container-high: var(--color-palette-neutral-40);
+  --color-surface-container-highest: var(--color-palette-neutral-50);
+}
+
+/* Explicit light theme — overrides OS dark preference when user selects light */
+:root[data-theme="light"] {
+  --color-primary: var(--color-key-primary);
+  --color-on-primary: var(--color-palette-primary-100);
+  --color-primary-container: var(--color-palette-primary-80);
+  --color-on-primary-container: var(--color-palette-primary-30);
+  --color-secondary: var(--color-palette-secondary-40);
+  --color-on-secondary: var(--color-palette-secondary-100);
+  --color-secondary-container: var(--color-palette-secondary-80);
+  --color-on-secondary-container: var(--color-palette-secondary-30);
+  --color-tertiary: var(--color-palette-tertiary-40);
+  --color-on-tertiary: var(--color-palette-tertiary-100);
+  --color-tertiary-container: var(--color-palette-tertiary-80);
+  --color-on-tertiary-container: var(--color-palette-tertiary-30);
+  --color-error: var(--color-palette-error-40);
+  --color-on-error: var(--color-palette-error-100);
+  --color-error-container: var(--color-palette-error-80);
+  --color-on-error-container: var(--color-palette-error-30);
+  --color-background: var(--color-key-page-background);
+  --color-on-background: #2a2a2a;
+  --color-surface: var(--color-palette-neutral-100);
+  --color-on-surface: #2a2a2a;
+  --color-surface-variant: var(--color-palette-neutral-variant-90);
+  --color-on-surface-variant: var(--color-palette-neutral-variant-30);
+  --color-outline: var(--color-palette-neutral-variant-50);
+  --color-outline-variant: var(--color-palette-neutral-variant-80);
+  --color-inverse-surface: var(--color-palette-neutral-20);
+  --color-inverse-on-surface: var(--color-palette-neutral-95);
+  --color-inverse-primary: var(--color-palette-primary-80);
+  --color-surface-dim: var(--color-palette-neutral-87);
+  --color-surface-bright: var(--color-palette-neutral-98);
+  --color-surface-container-lowest: var(--color-palette-neutral-100);
+  --color-surface-container-low: var(--color-palette-neutral-96);
+  --color-surface-container: var(--color-palette-neutral-94);
+  --color-surface-container-high: var(--color-palette-neutral-92);
+  --color-surface-container-highest: var(--color-palette-neutral-90);
 }
