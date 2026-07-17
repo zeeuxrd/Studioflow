@@ -1,34 +1,36 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
+import { badRequest } from "@/lib/api-error";
 
 export async function POST(req: Request) {
   try {
     const { name, email, password } = await req.json();
 
     if (!email || !password) {
-      return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
+      return badRequest("Email and password are required");
     }
 
     if (password.length < 8) {
-      return NextResponse.json({ error: "Password must be at least 8 characters" }, { status: 400 });
+      return badRequest("Password must be at least 8 characters");
     }
 
     if (!/[A-Z]/.test(password)) {
-      return NextResponse.json({ error: "Password must contain an uppercase letter" }, { status: 400 });
+      return badRequest("Password must contain an uppercase letter");
     }
 
     if (!/[a-z]/.test(password)) {
-      return NextResponse.json({ error: "Password must contain a lowercase letter" }, { status: 400 });
+      return badRequest("Password must contain a lowercase letter");
     }
 
     if (!/[0-9]/.test(password)) {
-      return NextResponse.json({ error: "Password must contain a number" }, { status: 400 });
+      return badRequest("Password must contain a number");
     }
 
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
-      return NextResponse.json({ error: "Email already in use" }, { status: 400 });
+      return badRequest("Email already in use");
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
@@ -40,6 +42,26 @@ export async function POST(req: Request) {
         password: hashedPassword,
       },
     });
+
+    const token = crypto.randomBytes(32).toString("hex");
+    const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+    await prisma.verificationToken.create({
+      data: {
+        identifier: email,
+        token,
+        expires,
+      },
+    });
+
+    const verificationLink = `${process.env.AUTH_URL || "http://localhost:3000"}/api/auth/verify-email?token=${token}`;
+
+    try {
+      const { sendVerificationEmail } = await import("@/lib/email");
+      await sendVerificationEmail(email, verificationLink);
+    } catch (err) {
+      console.log("Verification email failed:", err);
+    }
 
     return NextResponse.json({ success: true }, { status: 201 });
   } catch (err) {

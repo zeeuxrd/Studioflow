@@ -14,6 +14,7 @@ export default function CheckoutSection({ productId, price }: Props) {
   const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [downloadToken, setDownloadToken] = useState('');
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -26,19 +27,26 @@ export default function CheckoutSection({ productId, price }: Props) {
     setVerifying(true);
 
     const check = () => {
+      setError('');
       const url = `/api/verify-payment?tx_ref=${tx_ref}&transaction_id=${transaction_id}`;
       return fetch(url)
         .then((r) => r.json())
         .then((data) => {
-          if (data.error) console.error('Verify error:', data.error);
           if (data.verified) {
             setSuccess(true);
             setVerifying(false);
+            setDownloadToken(data.download_token || '');
+            if (data.email_error) setError('Email delivery issue: ' + data.email_error);
             if (pollRef.current) clearInterval(pollRef.current);
+          } else if (data.error) {
+            setError(data.error);
+            console.error('Verify error:', data.error);
           }
-          if (data.error) setError(data.error);
         })
-        .catch((err) => console.error('Verify fetch failed:', err));
+        .catch((err) => {
+          setError(err instanceof Error ? err.message : 'Verification request failed');
+          console.error('Verify fetch failed:', err);
+        });
     };
 
     check();
@@ -95,7 +103,13 @@ export default function CheckoutSection({ productId, price }: Props) {
           <div className={styles.successIcon}>&#10003;</div>
           <p style={{ fontWeight: 700, color: '#fff', margin: '0 0 4px' }}>Payment successful!</p>
           <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', margin: '0 0 16px' }}>Your purchase is complete.</p>
+          {downloadToken && (
+            <a href={`/download/${downloadToken}`} className={styles.downloadLink}>
+              Access Your Product
+            </a>
+          )}
           <button className={styles.dismissBtn} onClick={() => setSuccess(false)}>Got it</button>
+          {error && <p style={{ fontSize: 12, color: '#ff6b6b', marginTop: 12 }}>{error}</p>}
         </div>
       </div>
     );

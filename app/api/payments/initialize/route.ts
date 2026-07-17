@@ -1,13 +1,14 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { initializePayment } from '@/lib/flutterwave';
+import { badRequest } from '@/lib/api-error';
 
 export async function POST(request: Request) {
   try {
     const { product_id, buyer_email } = await request.json();
 
     if (!product_id || !buyer_email) {
-      return NextResponse.json({ error: 'Missing product_id or buyer_email' }, { status: 400 });
+      return badRequest('Missing product_id or buyer_email');
     }
 
     const product = await prisma.productDefinition.findUnique({
@@ -24,10 +25,10 @@ export async function POST(request: Request) {
     }
 
     if (product.monetization_price_suggestion <= 0) {
-      return NextResponse.json({ error: 'Invalid product price' }, { status: 400 });
+      return badRequest('Invalid product price');
     }
 
-    const tx_ref = `SF-${product_id.slice(0, 8)}-${Date.now()}`;
+    const tx_ref = `SF_${product_id}_${Date.now()}`;
     const redirect_url = `${process.env.AUTH_URL || 'http://localhost:3000'}/products/${product_id}?payment=success`;
 
     const { link } = await initializePayment({

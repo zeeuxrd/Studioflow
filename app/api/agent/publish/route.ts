@@ -32,17 +32,6 @@ export async function POST(request: Request) {
       data: { status: 'published' }
     });
 
-    for (let i = 0; i < 3; i++) {
-      await prisma.monetizationTracking.create({
-        data: {
-          user_id: session.user.id,
-          content_id: product_id,
-          conversion_type: 'purchase',
-          revenue_estimate: product.monetization_price_suggestion
-        }
-      });
-    }
-
     await prisma.monetizationTracking.create({
       data: {
         user_id: session.user.id,

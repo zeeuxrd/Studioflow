@@ -17,6 +17,7 @@ import {
   X
 } from "lucide-react";
 import styles from "./dashboard.module.css";
+import UsageBadge from '@/components/dashboard/UsageBadge';
 
 const NAV_ITEMS = [
   { href: "/dashboard/products", label: "Products", icon: Package },
@@ -234,6 +235,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           )}
         </nav>
 
+        <UsageBadge />
         <div className={styles.sidebarFooter}>
           {/* User Profile Info */}
           <div className={styles.userProfile}>

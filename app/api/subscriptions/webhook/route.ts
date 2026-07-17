@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
-import { verifyTransaction } from '@/lib/flutterwave';
-import { recordPurchase } from '@/lib/services/purchase.service';
 import { verifyWebhookSignature } from '@/lib/webhook-verifier';
+import { activateSubscription, cancelSubscriptionPlan } from '@/lib/services/subscription.service';
 import { apiError } from '@/lib/api-error';
 
 export async function POST(request: Request) {
@@ -23,31 +22,23 @@ export async function POST(request: Request) {
 
     const event = JSON.parse(body);
 
-    if (event.event !== 'charge.completed') {
-      return NextResponse.json({ message: 'Event ignored' });
+    if (event.event === 'subscription.charge') {
+      const { id, status, tx_ref } = event.data;
+      if (status !== 'successful') {
+        return NextResponse.json({ message: 'Payment not successful' });
+      }
+      await activateSubscription(tx_ref, String(id));
     }
 
-    const { id, tx_ref, status, amount } = event.data;
-
-    if (status !== 'successful') {
-      return NextResponse.json({ message: 'Payment not successful' });
+    if (event.event === 'subscription.cancelled') {
+      const { id } = event.data;
+      await cancelSubscriptionPlan(String(id));
     }
 
-    const verification = await verifyTransaction(id);
-    if (verification.status !== 'successful') {
-      return apiError('Verification failed', 400);
-    }
-
-    const result = await recordPurchase(tx_ref, { ...event.data, id });
-
-    if (!result) {
-      return NextResponse.json({ message: 'Could not record purchase - product may not exist' });
-    }
-
-    return NextResponse.json({ message: 'Payment recorded' });
+    return NextResponse.json({ message: 'Processed' });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Webhook processing failed';
-    console.error('Webhook error:', err);
+    console.error('Subscription webhook error:', err);
     return apiError(message, 500);
   }
 }

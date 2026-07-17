@@ -1,15 +1,29 @@
 import { NextResponse } from 'next/server';
-import { generateObject } from 'ai';
-import { deepseek } from '@ai-sdk/deepseek';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/lib/auth';
+import { checkGenerationLimit, incrementGenerationCount } from '@/lib/rate-limit';
+import { unauthorized, rateLimited } from '@/lib/api-error';
+import { aiService } from '@/lib/providers/deepseek-provider';
+import type { PlatformType } from '@prisma/client';
+
+interface RefinementStep {
+  instruction: string;
+  content_body: string;
+  engagement_prediction_score?: number;
+  created_at: string;
+}
 
 export async function POST(request: Request) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return unauthorized();
+    }
+
+    const limit = await checkGenerationLimit(session.user.id);
+    if (!limit.allowed) {
+      return rateLimited(limit.message || 'Generation limit reached');
     }
 
     const body = await request.json();
@@ -20,7 +34,7 @@ export async function POST(request: Request) {
       const startTime = Date.now();
       const existingPost = await prisma.contentPost.findFirst({
         where: { post_id, idea: { user_id: session.user.id } },
-        include: { idea: { include: { user: true } } }
+        include: { idea: { include: { user: { select: { tone_preference: true } } } } }
       });
 
       if (!existingPost) {
@@ -33,8 +47,7 @@ export async function POST(request: Request) {
       const styleLabel = format_style && format_style !== 'all' ? `Revise and frame the post as a ${format_style}.` : '';
       const instructionText = refinement_prompt || 'Refine current content style.';
 
-      const { object } = await generateObject({
-        model: deepseek('deepseek-chat'),
+      const { object } = await aiService.generateObject({
         system: `You are ContentCrafter, an elite social media ghostwriter. Your goal is to refine an existing social media post based on the user's feedback instructions and format style. 
         Adhere strictly to the requested platform type and tone. Output MUST be valid JSON matching the schema.`,
         prompt: `Original Idea: ${existingPost.idea?.idea_text}
@@ -53,7 +66,7 @@ export async function POST(request: Request) {
       });
 
       const existingHistory = Array.isArray(existingPost.refinement_history)
-        ? (existingPost.refinement_history as any)
+        ? (existingPost.refinement_history as unknown as RefinementStep[])
         : [];
 
       const newStep = {
@@ -69,11 +82,13 @@ export async function POST(request: Request) {
         data: {
           content_body: object.post_body,
           engagement_prediction_score: object.engagement_prediction_score,
-          refinement_history: updatedHistory
+          refinement_history: updatedHistory as any
         }
       });
 
       const generationTimeMs = Date.now() - startTime;
+
+      await incrementGenerationCount(session.user.id);
 
       return NextResponse.json({
         output: updatedPost,
@@ -96,7 +111,7 @@ export async function POST(request: Request) {
 
     const idea = await prisma.contentIdea.findFirst({
       where: { idea_id, user_id: session.user.id },
-      include: { user: true }
+      include: { user: { select: { tone_preference: true } } }
     });
 
     if (!idea) {
@@ -110,8 +125,7 @@ export async function POST(request: Request) {
       styleInstruction = `Frame the post content strictly as a ${format_style}.`;
     }
 
-    const { object } = await generateObject({
-      model: deepseek('deepseek-chat'),
+    const { object } = await aiService.generateObject({
       system: `You are ContentCrafter, an elite social media ghostwriter. Your goal is to generate a platform-ready post from an idea text. 
       Adhere strictly to the requested platform type and tone. Output MUST be valid JSON matching the schema.`,
       prompt: `Idea: ${idea.idea_text}
@@ -130,7 +144,7 @@ Write the full post body perfectly tailored for this platform. If it's X, use th
     const savedPost = await prisma.contentPost.create({
       data: {
         idea_id: idea.idea_id,
-        platform_type: platform_type as any,
+        platform_type: platform_type as PlatformType,
         content_body: object.post_body,
         engagement_prediction_score: object.engagement_prediction_score,
         status: 'draft'
@@ -138,6 +152,8 @@ Write the full post body perfectly tailored for this platform. If it's X, use th
     });
 
     const generationTimeMs = Date.now() - startTime;
+
+    await incrementGenerationCount(session.user.id);
 
     return NextResponse.json({
       output: { ...savedPost, refinement_history: [] },

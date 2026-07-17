@@ -1,17 +1,18 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { badRequest } from "@/lib/api-error";
 
 export async function POST(req: Request) {
   try {
     const { token, password } = await req.json();
 
     if (!token || !password) {
-      return NextResponse.json({ error: "Token and password are required" }, { status: 400 });
+      return badRequest("Token and password are required");
     }
 
     if (password.length < 6) {
-      return NextResponse.json({ error: "Password must be at least 6 characters" }, { status: 400 });
+      return badRequest("Password must be at least 6 characters");
     }
 
     const stored = await prisma.verificationToken.findUnique({

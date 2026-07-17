@@ -65,6 +65,21 @@ enum ConversionType {
   purchase
 }
 
+enum PlanTier {
+  free
+  starter
+  creator
+  pro
+}
+
+enum SubscriptionStatus {
+  pending
+  active
+  cancelled
+  expired
+  past_due
+}
+
 // ------------------------------------------------------
 // MODELS
 // ------------------------------------------------------
@@ -77,6 +92,7 @@ model User {
   image         String?
   password      String?
   niche         String?
+  plan              PlanTier          @default(free)
   tone_preference   TonePreference    @default(casual)
   platform_focus    PlatformType      @default(X)
   monetization_goal MonetizationGoal  @default(grow_audience)
@@ -86,6 +102,37 @@ model User {
   trackingEvents    MonetizationTracking[]
   accounts          Account[]
   sessions          Session[]
+  subscription      Subscription?
+  usageRecords      UsageRecord[]
+}
+
+model Subscription {
+  id                            String             @id @default(uuid())
+  user_id                       String             @unique
+  plan                          PlanTier
+  status                        SubscriptionStatus @default(active)
+  billing_period                String             @default("monthly")
+  flutterwave_subscription_id   String?            @unique
+  flutterwave_plan_id           String?
+  flutterwave_tx_ref            String?
+  current_period_start          DateTime
+  current_period_end            DateTime
+  created_at                    DateTime           @default(now())
+  updated_at                    DateTime           @updatedAt
+
+  user                          User               @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model UsageRecord {
+  id               String   @id @default(uuid())
+  user_id          String
+  period_start     DateTime
+  generations_count Int     @default(0)
+  created_at       DateTime @default(now())
+
+  user             User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, period_start])
 }
 
 model ContentIdea {
@@ -121,6 +168,7 @@ model ProductDefinition {
   title                         String
   content_structure             Json
   monetization_price_suggestion Float
+  full_content                  Json?
   status                        ProductStatus @default(draft)
   refinement_history            Json          @default("[]")
 
@@ -136,6 +184,8 @@ model Transaction {
   amount         Float
   currency       String   @default("USD")
   status         String   @default("pending")
+  download_token String?  @unique
+  downloaded_at  DateTime?
   created_at     DateTime @default(now())
 
   product        ProductDefinition @relation(fields: [product_id], references: [product_id])

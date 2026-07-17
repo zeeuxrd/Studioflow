@@ -1,15 +1,21 @@
 import { NextResponse } from 'next/server';
-import { generateObject } from 'ai';
-import { deepseek } from '@ai-sdk/deepseek';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/lib/auth';
+import { checkGenerationLimit, incrementGenerationCount } from '@/lib/rate-limit';
+import { unauthorized, rateLimited } from '@/lib/api-error';
+import { aiService } from '@/lib/providers/deepseek-provider';
 
 export async function POST(request: Request) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return unauthorized();
+    }
+
+    const limit = await checkGenerationLimit(session.user.id);
+    if (!limit.allowed) {
+      return rateLimited(limit.message || 'Generation limit reached');
     }
 
     const body = await request.json();
@@ -38,8 +44,7 @@ export async function POST(request: Request) {
       styleInstruction = `Ensure all generated content ideas strictly follow the '${format_style}' format style.`;
     }
 
-    const { object } = await generateObject({
-      model: deepseek('deepseek-chat'),
+    const { object } = await aiService.generateObject({
       system: `You are IdeaArchitect. Your goal is to generate exactly 1 highly engaging, platform-ready content idea based on the user's niche. 
       Output MUST be valid JSON matching the provided schema. Do not generate generic advice, be specific, creative, and action-oriented.`,
       prompt: `Niche: ${niche}\n${styleInstruction}\nGenerate exactly 1 brilliant content idea that this creator can post.`,
@@ -64,6 +69,8 @@ export async function POST(request: Request) {
     ));
 
     const generationTimeMs = Date.now() - startTime;
+
+    await incrementGenerationCount(session.user.id);
 
     return NextResponse.json({
       output: { ideas: savedIdeas },

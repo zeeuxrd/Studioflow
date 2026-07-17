@@ -331,6 +331,27 @@
   border-color: var(--color-primary);
 }
 
+.downloadLink {
+  display: inline-block;
+  background-color: var(--color-primary);
+  color: #ffffff;
+  text-decoration: none;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  width: 100%;
+  text-align: center;
+  box-sizing: border-box;
+  transition: background-color 0.2s;
+}
+
+.downloadLink:hover {
+  background-color: color-mix(in srgb, #ffffff 8%, var(--color-primary));
+}
+
 .disclaimer {
   font-size: 11px;
   color: rgba(255, 255, 255, 0.35);

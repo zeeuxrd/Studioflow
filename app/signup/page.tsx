@@ -144,7 +144,7 @@ export default function SignUpPage() {
   return (
     <div className={styles.container}>
       <div className={styles.card}>
-        <p className={styles.stepIndicator}>Step {step}/3</p>
+
 
         {step === 1 && (
           <>

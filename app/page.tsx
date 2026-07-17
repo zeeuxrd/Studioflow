@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { ArrowUpRight, Sparkles, Music, Play, Star, Check, ChevronDown, MapPin, Phone, Mail } from "lucide-react";
 import styles from './page.module.css';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Draggable } from 'gsap/Draggable';
@@ -44,7 +45,9 @@ const pillWords = [
 ];
 
 export default function MarketingPage() {
+  const router = useRouter();
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
+  const [subscribing, setSubscribing] = useState<string | null>(null);
   const [faqActiveIndex, setFaqActiveIndex] = useState<number | null>(0);
   const featuresRef = useRef<HTMLDivElement>(null);
   const heroRef = useRef<HTMLElement>(null);
@@ -622,6 +625,32 @@ export default function MarketingPage() {
     };
   }, []);
 
+  async function handleSubscribe(plan: string) {
+    setSubscribing(plan);
+    try {
+      const res = await fetch('/api/subscriptions/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan, billing_period: billingPeriod }),
+      });
+
+      if (res.status === 401) {
+        router.push(`/signup?plan=${plan}&period=${billingPeriod}`);
+        return;
+      }
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Subscription failed');
+
+      if (data.link) window.location.href = data.link;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Something went wrong';
+      alert(msg);
+    } finally {
+      setSubscribing(null);
+    }
+  }
+
   const faqs = [
     {
       question: 'What is StudioFlow?',
@@ -981,16 +1010,22 @@ export default function MarketingPage() {
               </p>
               <div className={styles.pricingPriceRow}>
                 <span className={styles.pricingPrice}>
-                  ${billingPeriod === 'monthly' ? <AnimatedPrice value={7} key="starter" /> : <AnimatedPrice value={199} key="starter" />}
+                  ₦{billingPeriod === 'monthly' ? <AnimatedPrice value={7000} key="starter" /> : <AnimatedPrice value={20000} key="starter" />}
                 </span>
                 <div className={styles.pricingPeriodCol}>
                   <span className={styles.pricingPeriod}>monthly</span>
                   <span className={styles.pricingBilledPeriod}>billed annually</span>
                 </div>
               </div>
-              <Link href="/signup" className={`${styles.pricingCardButton} ${styles.pricingCardButtonOutline}`}>
-                Start free trial
-              </Link>
+              <button
+                type="button"
+                className={`${styles.pricingCardButton} ${styles.pricingCardButtonOutline}`}
+                onClick={() => handleSubscribe('starter')}
+                disabled={subscribing === 'starter'}
+                style={{ cursor: 'pointer', border: 'none', fontFamily: 'inherit' }}
+              >
+                {subscribing === 'starter' ? 'Redirecting...' : 'Start free trial'}
+              </button>
             </div>
             
             <div className={styles.pricingCardDivider}></div>
@@ -1028,16 +1063,22 @@ export default function MarketingPage() {
               </p>
               <div className={styles.pricingPriceRow}>
                 <span className={styles.pricingPrice}>
-                  ${billingPeriod === 'monthly' ? <AnimatedPrice value={20} key="creator" /> : <AnimatedPrice value={359} key="creator" />}
+                  ₦{billingPeriod === 'monthly' ? <AnimatedPrice value={14000} key="creator" /> : <AnimatedPrice value={50000} key="creator" />}
                 </span>
                 <div className={styles.pricingPeriodCol}>
                   <span className={styles.pricingPeriod}>monthly</span>
                   <span className={styles.pricingBilledPeriod}>billed annually</span>
                 </div>
               </div>
-              <Link href="/signup" className={`${styles.pricingCardButton} ${styles.pricingCardButtonOutline}`}>
-                Start free trial
-              </Link>
+              <button
+                type="button"
+                className={`${styles.pricingCardButton} ${styles.pricingCardButtonOutline}`}
+                onClick={() => handleSubscribe('creator')}
+                disabled={subscribing === 'creator'}
+                style={{ cursor: 'pointer', border: 'none', fontFamily: 'inherit' }}
+              >
+                {subscribing === 'creator' ? 'Redirecting...' : 'Start free trial'}
+              </button>
             </div>
             
             <div className={styles.pricingCardDivider}></div>
@@ -1075,16 +1116,22 @@ export default function MarketingPage() {
               </p>
               <div className={styles.pricingPriceRow}>
                 <span className={styles.pricingPrice}>
-                  ${billingPeriod === 'monthly' ? <AnimatedPrice value={100} key="pro" /> : <AnimatedPrice value={439} key="pro" />}
+                  ₦{billingPeriod === 'monthly' ? <AnimatedPrice value={30000} key="pro" /> : <AnimatedPrice value={100000} key="pro" />}
                 </span>
                 <div className={styles.pricingPeriodCol}>
                   <span className={styles.pricingPeriod}>monthly</span>
                   <span className={styles.pricingBilledPeriod}>billed annually</span>
                 </div>
               </div>
-              <Link href="/signup" className={`${styles.pricingCardButton} ${styles.pricingCardButtonOutline}`}>
-                Start free trial
-              </Link>
+              <button
+                type="button"
+                className={`${styles.pricingCardButton} ${styles.pricingCardButtonOutline}`}
+                onClick={() => handleSubscribe('pro')}
+                disabled={subscribing === 'pro'}
+                style={{ cursor: 'pointer', border: 'none', fontFamily: 'inherit' }}
+              >
+                {subscribing === 'pro' ? 'Redirecting...' : 'Start free trial'}
+              </button>
             </div>
             
             <div className={styles.pricingCardDivider}></div>

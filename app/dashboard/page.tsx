@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { 
   Sparkles, 
@@ -20,6 +20,10 @@ import IdeaCard from "@/components/dashboard/IdeaCard";
 import styles from './dashboard.module.css';
 
 export default function DashboardPage() {
+  return <Suspense fallback={null}><DashboardContent /></Suspense>;
+}
+
+function DashboardContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const userId = session?.user?.id ?? null;
@@ -49,6 +53,30 @@ export default function DashboardPage() {
   const [isProductizing, setIsProductizing] = useState<string | null>(null);
   const [products, setProducts] = useState<Record<string, Product>>({});
   const [isPublishing, setIsPublishing] = useState<string | null>(null);
+
+  const searchParams = useSearchParams();
+  const [subVerifying, setSubVerifying] = useState(false);
+  const [subSuccess, setSubSuccess] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get('subscription') !== 'success') return;
+    setSubVerifying(true);
+
+    const check = () => fetch('/api/subscriptions/status')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.status === 'active' && data.plan !== 'free') {
+          setSubSuccess(true);
+          setSubVerifying(false);
+          window.history.replaceState({}, '', '/dashboard');
+        }
+      })
+      .catch(() => {});
+
+    const interval = setInterval(check, 2000);
+    check();
+    return () => clearInterval(interval);
+  }, [searchParams]);
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [publishedProductId, setPublishedProductId] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -471,6 +499,53 @@ export default function DashboardPage() {
 
   return (
     <>
+      {(subVerifying || subSuccess) && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100,
+        }}>
+          <div style={{
+            background: 'var(--color-surface)', borderRadius: 24, padding: '48px 40px',
+            maxWidth: 400, width: '90%', textAlign: 'center', boxShadow: '0 10px 40px rgba(0,0,0,0.4)',
+          }}>
+            {subVerifying && (
+              <>
+                <div style={{
+                  width: 40, height: 40,
+                  border: '3px solid var(--color-outline)',
+                  borderTopColor: 'var(--color-primary)', borderRadius: '50%',
+                  margin: '0 auto 20px',
+                  animation: 'subSpin 0.8s linear infinite',
+                }} />
+                <style>{`@keyframes subSpin { to { transform: rotate(360deg) } }`}</style>
+                <p style={{ fontWeight: 700, color: 'var(--color-on-surface)', margin: '0 0 4px' }}>Verifying subscription...</p>
+                <p style={{ fontSize: 13, color: 'var(--color-on-surface-variant)', margin: 0 }}>Please wait while we confirm your payment</p>
+              </>
+            )}
+            {subSuccess && (
+              <>
+                <div style={{
+                  width: 48, height: 48, borderRadius: '50%',
+                  background: 'var(--color-primary)', display: 'flex',
+                  alignItems: 'center', justifyContent: 'center',
+                  fontSize: 24, color: '#fff', margin: '0 auto 16px',
+                }}>&#10003;</div>
+                <p style={{ fontWeight: 700, color: 'var(--color-on-surface)', margin: '0 0 4px' }}>Subscription active!</p>
+                <p style={{ fontSize: 13, color: 'var(--color-on-surface-variant)', margin: '0 0 16px' }}>Your plan is now active. Enjoy the upgraded features!</p>
+                <button
+                  onClick={() => setSubSuccess(false)}
+                  style={{
+                    background: 'transparent', color: 'var(--color-on-surface)',
+                    border: '1.5px solid var(--color-outline)', borderRadius: 8,
+                    padding: '10px 32px', fontSize: 14, fontWeight: 700, cursor: 'pointer',
+                  }}
+                >Got it</button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Top Bar matching mockup */}
       <div className={styles.topBar}>
         <span className={styles.pageTitle}>Idea Architect</span>
@@ -536,8 +611,29 @@ export default function DashboardPage() {
 
         {/* Error Display */}
         {error && (
-          <div style={{ color: 'var(--color-error)', margin: '20px 0', fontWeight: 'bold' }}>
-            {error}
+          <div style={{
+            background: 'rgba(255, 107, 107, 0.1)',
+            border: '1px solid rgba(255, 107, 107, 0.3)',
+            borderRadius: 12,
+            padding: '16px 20px',
+            margin: '20px 0',
+          }}>
+            <p style={{ color: '#ff6b6b', fontWeight: 600, margin: 0 }}>{error}</p>
+            {error.includes('generation') && error.includes('limit') && (
+              <a href="/#pricing" style={{
+                display: 'inline-block',
+                marginTop: 12,
+                background: '#a88aed',
+                color: '#fff',
+                padding: '10px 24px',
+                borderRadius: 8,
+                textDecoration: 'none',
+                fontWeight: 600,
+                fontSize: 14,
+              }}>
+                Upgrade Plan
+              </a>
+            )}
           </div>
         )}
 
