@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { 
   Package, 
   Search, 
@@ -11,7 +12,6 @@ import {
   ArrowDown,
   BookOpen,
   Rocket,
-  Check,
   FileText,
   Plus,
   Trash2
@@ -67,7 +67,7 @@ export default function ProductsPage() {
   useEffect(() => {
     if (!userId) return;
     setLoading(true);
-    fetch(`/api/products?user_id=${userId}`)
+      fetch(`/api/products`)
       .then(r => r.json())
       .then(data => setProducts(data.products || []))
       .catch(console.error)
@@ -85,7 +85,7 @@ export default function ProductsPage() {
       const res = await fetch('/api/agent/publish', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ product_id: productId, user_id: userId })
+        body: JSON.stringify({ product_id: productId })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || 'Failed to publish');
@@ -101,7 +101,7 @@ export default function ProductsPage() {
     if (selectedIds.size === 0) return;
     setDeleting(true);
     try {
-      const res = await fetch(`/api/products?user_id=${userId}&ids=${Array.from(selectedIds).join(',')}`, {
+      const res = await fetch(`/api/products?ids=${Array.from(selectedIds).join(',')}`, {
         method: 'DELETE',
       });
       if (!res.ok) throw new Error('Failed to delete');
@@ -311,15 +311,37 @@ export default function ProductsPage() {
                     <p style={{ fontSize: "12px", color: "var(--color-on-surface-variant)", opacity: 0.7, margin: "4px 0", lineHeight: 0.96 }}>
                       Source: {product.source_post?.platform_type} Post
                     </p>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "40px" }}>
-                      <span style={{ fontSize: "16px", fontWeight: "700", color: "var(--color-on-surface)" }}>
-                        ${product.monetization_price_suggestion}
-                      </span>
-                      <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "2px 10px", borderRadius: "100px", height: "24px", width: "auto", background: "color-mix(in srgb, var(--color-palette-neutral-90) 40%, transparent)" }}>
-                        {product.status === "published" ? <Check size={14} /> : <FileText size={14} />}
-                        <span style={{ fontSize: "12px", fontWeight: 600, textTransform: "capitalize", color: "var(--color-on-surface)" }}>{product.status}</span>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "40px" }}>
+                        <span style={{ fontSize: "16px", fontWeight: "700", color: "var(--color-on-surface)" }}>
+                          &#8358;{(product.monetization_price_suggestion / 100).toLocaleString()}
+                        </span>
+                        {product.status === "published" ? (
+                          <Link
+                            href={`/products/${product.product_id}`}
+                            target="_blank"
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "4px",
+                              padding: "2px 12px",
+                              borderRadius: "100px",
+                              height: "24px",
+                              fontSize: "12px",
+                              fontWeight: 600,
+                              textDecoration: "none",
+                              color: "var(--color-primary)",
+                              background: "color-mix(in srgb, var(--color-primary) 12%, transparent)",
+                            }}
+                          >
+                            View <span style={{ fontSize: "14px", lineHeight: 1 }}>&#8599;</span>
+                          </Link>
+                        ) : (
+                          <div style={{ display: "flex", alignItems: "center", gap: "6px", padding: "2px 10px", borderRadius: "100px", height: "24px", width: "auto", background: "color-mix(in srgb, var(--color-palette-neutral-90) 40%, transparent)" }}>
+                            <FileText size={14} />
+                            <span style={{ fontSize: "12px", fontWeight: 600, textTransform: "capitalize", color: "var(--color-on-surface)" }}>{product.status}</span>
+                          </div>
+                        )}
                       </div>
-                    </div>
                   </div>
 
                   <div className={styles.libraryGridCardFooter} style={{ borderTop: "none", paddingTop: 0 }}>

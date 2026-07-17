@@ -12,7 +12,9 @@ import {
   Search,
   MessageCircle,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Menu,
+  X
 } from "lucide-react";
 import styles from "./dashboard.module.css";
 
@@ -30,6 +32,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [chats, setChats] = useState<any[]>([]);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const recentChats = chats.slice(0, 5);
   const filteredChats = recentChats.filter((chat) =>
@@ -43,7 +46,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const fetchChats = async () => {
     if (!userId) return;
     try {
-      const res = await fetch(`/api/posts?user_id=${userId}`);
+      const res = await fetch(`/api/posts`);
       const data = await res.json();
       if (res.ok) {
         setChats(data.posts || []);
@@ -65,7 +68,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return () => window.removeEventListener("refresh-ideas", handleRefresh);
   }, [userId]);
 
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
+
   const handleNewChat = () => {
+    setMobileMenuOpen(false);
     window.dispatchEvent(new Event("new-chat"));
     if (pathname !== "/dashboard") {
       router.push("/dashboard");
@@ -98,8 +106,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className={`${styles.dashboardLayout} ${theme === "dark" ? "dark-theme" : ""}`}>
+      {/* Mobile overlay */}
+      {mobileMenuOpen && (
+        <div className={styles.mobileOverlay} onClick={() => setMobileMenuOpen(false)} />
+      )}
+
       {/* Sidebar (Left) */}
-      <aside className={styles.sidebar}>
+      <aside className={`${styles.sidebar} ${mobileMenuOpen ? styles.sidebarOpen : ""}`}>
         <div className={styles.sidebarBrand}>
           <span className={styles.sidebarLogo}>SF</span>
           <span className={styles.sidebarBrandName}>StudioFlow</span>
@@ -147,6 +160,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   key={chat.post_id}
                   className={styles.chatItem}
                   onClick={() => {
+                    setMobileMenuOpen(false);
                     if (typeof window !== "undefined") {
                       localStorage.setItem("selected-idea-onload", JSON.stringify(chat));
                     }
@@ -201,6 +215,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     key={chat.post_id}
                     className={styles.chatItem}
                     onClick={() => {
+                      setMobileMenuOpen(false);
                       if (typeof window !== "undefined") {
                         localStorage.setItem("selected-idea-onload", JSON.stringify(chat));
                       }
@@ -231,7 +246,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
             <button 
               className={styles.topActionIcon} 
-              onClick={() => signOut({ redirectTo: "/signin" })}
+              onClick={() => {
+                localStorage.removeItem("selected-idea-onload");
+                signOut({ redirectTo: "/signin" });
+              }}
               title="Sign out"
             >
               <LogOut size={16} />
@@ -242,6 +260,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Main Workspace (Middle) - wrapped in its layout */}
       <main className={styles.mainWorkspace}>
+        <button
+          className={styles.mobileMenuBtn}
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          aria-label="Toggle menu"
+        >
+          {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+        </button>
         {children}
       </main>
 

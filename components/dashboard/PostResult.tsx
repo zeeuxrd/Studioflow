@@ -137,7 +137,7 @@ export default function PostResult({
         <div className={styles.premiumProductCard}>
           <div className={styles.premiumHeader}>
             <span className={styles.premiumBadge}>Premium {product.product_type.charAt(0).toUpperCase() + product.product_type.slice(1)}</span>
-            <span className={styles.premiumPrice}>${product.monetization_price_suggestion} Est. Value</span>
+            <span className={styles.premiumPrice}>&#8358;{(product.monetization_price_suggestion / 100).toLocaleString()} Est. Value</span>
           </div>
 
           {/* Conversational timeline for products */}
@@ -172,7 +172,7 @@ export default function PostResult({
                   {/* AI Response */}
                   <div className={styles.chatMessageAgent}>
                     <div className={styles.chatMessageHeader}>
-                      <span>ProductAlchemist (Rev. {idx + 1}) - ${ref.monetization_price_suggestion}</span>
+                      <span>ProductAlchemist (Rev. {idx + 1}) - &#8358;{(ref.monetization_price_suggestion / 100).toLocaleString()}</span>
                     </div>
                     <h3 className={styles.premiumTitle} style={{ fontSize: "14px", margin: "4px 0 8px 0" }}>{ref.title}</h3>
                     <div className={styles.premiumStructure}>

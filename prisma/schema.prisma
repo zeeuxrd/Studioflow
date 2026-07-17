@@ -125,6 +125,20 @@ model ProductDefinition {
   refinement_history            Json          @default("[]")
 
   source_post                   ContentPost   @relation(fields: [source_post_id], references: [post_id], onDelete: Cascade)
+  transactions                  Transaction[]
+}
+
+model Transaction {
+  transaction_id String   @id
+  reference      String   @unique
+  product_id     String
+  buyer_email    String
+  amount         Float
+  currency       String   @default("USD")
+  status         String   @default("pending")
+  created_at     DateTime @default(now())
+
+  product        ProductDefinition @relation(fields: [product_id], references: [product_id])
 }
 
 model MonetizationTracking {

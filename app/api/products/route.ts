@@ -1,17 +1,16 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { auth } from '@/lib/auth';
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('user_id');
-
-    if (!userId) {
-      return NextResponse.json({ error: "Missing user_id" }, { status: 400 });
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const products = await prisma.productDefinition.findMany({
-      where: { source_post: { idea: { user_id: userId } } },
+      where: { source_post: { idea: { user_id: session.user.id } } },
       include: { 
         source_post: { 
           select: { 
@@ -31,19 +30,23 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ products });
   } catch (error) {
-    console.error("Failed to fetch products:", error);
-    return NextResponse.json({ error: "Failed to fetch products" }, { status: 500 });
+    console.error('Failed to fetch products:', error);
+    return NextResponse.json({ error: 'Failed to fetch products' }, { status: 500 });
   }
 }
 
 export async function DELETE(request: Request) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('user_id');
     const productIds = searchParams.get('ids');
 
-    if (!userId || !productIds) {
-      return NextResponse.json({ error: "Missing user_id or ids" }, { status: 400 });
+    if (!productIds) {
+      return NextResponse.json({ error: 'Missing ids' }, { status: 400 });
     }
 
     const ids = productIds.split(',');
@@ -51,13 +54,13 @@ export async function DELETE(request: Request) {
     await prisma.productDefinition.deleteMany({
       where: {
         product_id: { in: ids },
-        source_post: { idea: { user_id: userId } }
+        source_post: { idea: { user_id: session.user.id } }
       }
     });
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Failed to delete products:", error);
-    return NextResponse.json({ error: "Failed to delete products" }, { status: 500 });
+    console.error('Failed to delete products:', error);
+    return NextResponse.json({ error: 'Failed to delete products' }, { status: 500 });
   }
 }

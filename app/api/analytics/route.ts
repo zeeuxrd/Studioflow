@@ -1,22 +1,19 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { auth } from '@/lib/auth';
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('user_id');
-
-    if (!userId) {
-      return NextResponse.json({ error: "Missing user_id" }, { status: 400 });
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Fetch all tracking events for this user
     const events = await prisma.monetizationTracking.findMany({
-      where: { user_id: userId },
+      where: { user_id: session.user.id },
       orderBy: { created_at: 'desc' }
     });
 
-    // Calculate aggregated metrics
     const totalRevenue = events
       .filter(e => e.conversion_type === 'purchase')
       .reduce((sum, e) => sum + (e.revenue_estimate || 0), 0);
@@ -36,9 +33,8 @@ export async function GET(request: Request) {
       },
       events
     });
-
   } catch (error) {
-    console.error("Analytics Error:", error);
-    return NextResponse.json({ error: "Failed to fetch analytics" }, { status: 500 });
+    console.error('Analytics Error:', error);
+    return NextResponse.json({ error: 'Failed to fetch analytics' }, { status: 500 });
   }
 }

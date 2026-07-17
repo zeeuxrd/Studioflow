@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { 
-  DollarSign, 
   Search, 
   ArrowUpDown, 
   ArrowUp, 
@@ -82,7 +81,7 @@ export default function AnalyticsPage() {
       setLoading(true);
       try {
         // 1. Fetch Analytics Metrics & Events
-        const analyticsRes = await fetch(`/api/analytics?user_id=${userId}`);
+        const analyticsRes = await fetch(`/api/analytics`);
         const analyticsData = await analyticsRes.json();
         if (!analyticsRes.ok) throw new Error(analyticsData.error || 'Failed to load analytics');
 
@@ -90,7 +89,7 @@ export default function AnalyticsPage() {
         setEvents(analyticsData.events || []);
 
         // 2. Fetch Products for lookup mapping
-        const productsRes = await fetch(`/api/products?user_id=${userId}`);
+        const productsRes = await fetch(`/api/products`);
         const productsData = await productsRes.json();
         if (productsRes.ok) {
           setProducts(productsData.products || []);
@@ -272,11 +271,11 @@ export default function AnalyticsPage() {
           <div className={styles.metricCardHeader}>
             <span className={styles.metricLabel}>Total Cost (Revenue)</span>
             <div style={{ width: "32px", height: "32px", borderRadius: "50%", backgroundColor: "color-mix(in srgb, #2e7d32 15%, transparent)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <DollarSign size={16} style={{ color: "#2e7d32" }} />
+              <TrendingUp size={16} style={{ color: "#2e7d32" }} />
             </div>
           </div>
           <div className={`${styles.metricValue} ${styles.metricValuePrimary}`}>
-            ${metrics.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            &#8358;{(metrics.totalRevenue / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
           <p className={styles.metricSubtitle}>New cost last 365 days</p>
         </div>
@@ -396,7 +395,7 @@ export default function AnalyticsPage() {
                           </span>
                         </td>
                         <td className={dashStyles.libraryTd} style={{ textAlign: "right", color: isPurchase ? "var(--color-primary)" : "inherit" }}>
-                          ${evt.revenue_estimate.toFixed(2)}
+                          &#8358;{(evt.revenue_estimate / 100).toFixed(2)}
                         </td>
                       </tr>
                     );

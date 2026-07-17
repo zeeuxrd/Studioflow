@@ -3,15 +3,17 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { 
   Sparkles, 
   Send, 
   HelpCircle, 
-  Gift, 
   Zap,
   Sun,
   Moon,
-  CheckCircle
+  CheckCircle,
+  MessageSquarePlus,
+  MoreVertical
 } from 'lucide-react';
 import type { Idea, Post, Product } from "@/components/dashboard/types";
 import IdeaCard from "@/components/dashboard/IdeaCard";
@@ -48,6 +50,9 @@ export default function DashboardPage() {
   const [products, setProducts] = useState<Record<string, Product>>({});
   const [isPublishing, setIsPublishing] = useState<string | null>(null);
   const [showPublishModal, setShowPublishModal] = useState(false);
+  const [publishedProductId, setPublishedProductId] = useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const [theme, setTheme] = useState<"light" | "dark">("light");
@@ -69,6 +74,19 @@ export default function DashboardPage() {
     localStorage.setItem("studioflow-theme", next);
     document.documentElement.setAttribute("data-theme", next);
   };
+
+  // Close three-dot menu on outside click
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    if (menuOpen) {
+      document.addEventListener("mousedown", handleClick);
+    }
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [menuOpen]);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -103,9 +121,8 @@ export default function DashboardPage() {
         setActivePostId(chat.post_id);
 
         // Refresh from server to get latest refinement_history
-        const uid = userId || chat.user_id || chat.idea?.user_id;
-        if (uid) {
-          fetch(`/api/posts?user_id=${uid}&post_id=${chat.post_id}`)
+        if (userId && chat.post_id) {
+          fetch(`/api/posts?post_id=${chat.post_id}`)
             .then(r => r.json())
             .then(data => {
               if (data.post) {
@@ -118,10 +135,8 @@ export default function DashboardPage() {
             .catch(() => {});
         }
 
-        // Fetch any product associated with this post to show on canvas
-        const currentUserId = userId || chat.idea?.user_id;
-        if (currentUserId) {
-          fetch(`/api/products?user_id=${currentUserId}`)
+        if (userId) {
+          fetch(`/api/products`)
             .then(r => r.json())
             .then(data => {
               const matchedProduct = (data.products || []).find((p: any) => p.source_post_id === chat.post_id);
@@ -197,7 +212,7 @@ export default function DashboardPage() {
       const res = await fetch('/api/agent/idea-architect', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: userId, niche: activeNiche, format_style: formatStyle })
+        body: JSON.stringify({ niche: activeNiche, format_style: formatStyle })
       });
       
       const data = await res.json();
@@ -264,11 +279,12 @@ export default function DashboardPage() {
       const res = await fetch('/api/agent/publish', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ product_id: productId, user_id: userId })
+        body: JSON.stringify({ product_id: productId })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || 'Failed to publish product');
       
+      setPublishedProductId(productId);
       setShowPublishModal(true);
       window.dispatchEvent(new Event("refresh-ideas"));
     } catch (err: any) {
@@ -374,12 +390,12 @@ export default function DashboardPage() {
               className={styles.commandInput}
               placeholder={
                 activeIdeaId && posts[activeIdeaId] && products[posts[activeIdeaId].post_id]
-                  ? "Refine digital product outline (e.g. add module, change price suggestion)..."
+                  ? "Refine product outline..."
                   : activeIdeaId && posts[activeIdeaId]
-                  ? "Refine content post (e.g. make it shorter, write a thread, add emojis)..."
+                  ? "Refine content post..."
                   : ideas.length > 0
-                  ? "Refine ideas or suggest a new niche topic (e.g. Coding Tips)..."
-                  : "Type content topic or niche (e.g. AI for Beginners)..."
+                  ? "Refine ideas or suggest a topic..."
+                  : "Type a topic or niche..."
               }
               value={niche}
               onChange={(e) => setNiche(e.target.value)}
@@ -459,19 +475,24 @@ export default function DashboardPage() {
       <div className={styles.topBar}>
         <span className={styles.pageTitle}>Idea Architect</span>
         <div className={styles.topActions}>
-            <button className={styles.upgradeBtn}>
-              <Zap size={14} />
-              <span>Upgrade</span>
+          <div className={styles.threeDotMenu} ref={menuRef}>
+            <button className={styles.topActionIcon} onClick={() => setMenuOpen(!menuOpen)} title="Menu">
+              <MoreVertical size={18} strokeWidth={1} />
             </button>
-          <button className={styles.topActionIcon} title="Help">
-            <HelpCircle size={18} strokeWidth={1} />
-          </button>
-          <button className={styles.topActionIcon} title="Gift">
-            <Gift size={18} strokeWidth={1} />
-          </button>
-          <button className={styles.topActionIcon} onClick={toggleTheme} title="Toggle theme">
-            {theme === "light" ? <Moon size={18} strokeWidth={1} /> : <Sun size={18} strokeWidth={1} />}
-          </button>
+            {menuOpen && (
+              <div className={styles.threeDotDropdown}>
+                <button className={styles.threeDotItem} onClick={() => { setMenuOpen(false); /* help action */ }}>
+                  <HelpCircle size={16} /> Help
+                </button>
+                <button className={styles.threeDotItem} onClick={() => { setMenuOpen(false); /* new chat */ }}>
+                  <MessageSquarePlus size={16} /> New Chat
+                </button>
+                <button className={styles.threeDotItem} onClick={() => { setMenuOpen(false); toggleTheme(); }}>
+                  {theme === "light" ? <Moon size={16} /> : <Sun size={16} />} {theme === "light" ? "Dark" : "Light"} Mode
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -480,9 +501,6 @@ export default function DashboardPage() {
         {ideas.length === 0 && !isGenerating && (
           <div className={styles.welcomeContainer}>
             <h1 className={styles.welcomeTitle}>{firstName}, your next big idea awaits</h1>
-            <p className={styles.welcomeSubtitle}>
-              Get started by typing your niche in the command center below, or select an action to start.
-            </p>
 
             {/* Inline input bar inside welcome container */}
             {renderCommandInput(false)}
@@ -552,14 +570,21 @@ export default function DashboardPage() {
       </div>
 
       {showPublishModal && (
-        <div className={styles.modalOverlay} onClick={() => setShowPublishModal(false)}>
+        <div className={styles.modalOverlay} onClick={() => { setShowPublishModal(false); setPublishedProductId(null); }}>
           <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
             <CheckCircle size={34} className={styles.modalIcon} />
             <h2 className={styles.modalTitle}>Published!</h2>
             <p className={styles.modalText}>Published! Revenue tracking active.</p>
-            <button className={styles.secondaryBtn} style={{ marginTop: 6 }} onClick={() => setShowPublishModal(false)}>
-              Got it
-            </button>
+            <div className={styles.modalActions}>
+              {publishedProductId && (
+                <Link href={`/products/${publishedProductId}`} className={styles.primaryBtn}>
+                  View Public Page
+                </Link>
+              )}
+              <button className={styles.secondaryBtn} onClick={() => { setShowPublishModal(false); setPublishedProductId(null); }}>
+                Got it
+              </button>
+            </div>
           </div>
         </div>
       )}
