@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  trustHost: true,
   secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
   adapter: PrismaAdapter(prisma),
   session: { strategy: "jwt" },
@@ -36,7 +37,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const isValid = await bcrypt.compare(password, user.password);
         if (!isValid) return null;
 
-        return { id: user.id, email: user.email, name: user.name };
+        return { id: user.id, email: user.email, name: user.name, niche: user.niche };
       },
     }),
   ],
@@ -44,13 +45,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.sub = user.id;
-      }
-      if (token.sub) {
-        const dbUser = await prisma.user.findUnique({
-          where: { id: token.sub },
-          select: { niche: true },
-        });
-        token.niche = dbUser?.niche ?? null;
+        token.niche = (user as any).niche ?? null;
       }
       return token;
     },

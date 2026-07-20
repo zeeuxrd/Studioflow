@@ -2,11 +2,11 @@ import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
 
-const connectionString = `${process.env.DATABASE_URL}`;
+const connectionString = (process.env.DATABASE_URL || "").trim();
 
 const pool = new Pool({
   connectionString,
-  ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : undefined,
+  ssl: process.env.NODE_ENV === "production" || connectionString.includes("supabase") ? { rejectUnauthorized: false } : undefined,
 });
 const adapter = new PrismaPg(pool);
 
