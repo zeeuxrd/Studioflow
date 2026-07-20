@@ -121,20 +121,23 @@ export default function SignUpPage() {
         return;
       }
 
-      const result = await signIn("credentials", {
-        email,
-        password,
-        redirect: false,
-      });
+      try {
+        const result = await signIn("credentials", {
+          email,
+          password,
+          redirect: false,
+        });
 
-      if (result?.error) {
-        setError("Account created. Please sign in manually.");
+        if (result?.error) {
+          router.push("/signin");
+          return;
+        }
+
+        router.push("/onboarding");
+        router.refresh();
+      } catch (authErr) {
         router.push("/signin");
-        return;
       }
-
-      router.push("/onboarding");
-      router.refresh();
     } catch (err: any) {
       setError(err.message || "Something went wrong");
       setIsLoading(false);

@@ -6,11 +6,13 @@ import { badRequest } from "@/lib/api-error";
 
 export async function POST(req: Request) {
   try {
-    const { name, email, password } = await req.json();
+    const { name, email: rawEmail, password } = await req.json();
 
-    if (!email || !password) {
+    if (!rawEmail || !password) {
       return badRequest("Email and password are required");
     }
+
+    const email = rawEmail.trim().toLowerCase();
 
     if (password.length < 8) {
       return badRequest("Password must be at least 8 characters");
@@ -28,12 +30,14 @@ export async function POST(req: Request) {
       return badRequest("Password must contain a number");
     }
 
-    const existing = await prisma.user.findUnique({ where: { email } });
+    const existing = await prisma.user.findFirst({
+      where: { email: { equals: email, mode: 'insensitive' } }
+    });
     if (existing) {
       return badRequest("Email already in use");
     }
 
-    const hashedPassword = await bcrypt.hash(password, 12);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     await prisma.user.create({
       data: {
@@ -56,12 +60,10 @@ export async function POST(req: Request) {
 
     const verificationLink = `${process.env.AUTH_URL || "http://localhost:3000"}/api/auth/verify-email?token=${token}`;
 
-    try {
-      const { sendVerificationEmail } = await import("@/lib/email");
-      await sendVerificationEmail(email, verificationLink);
-    } catch (err) {
-      console.log("Verification email failed:", err);
-    }
+    // Send verification email in non-blocking background task for instant UI response
+    import("@/lib/email")
+      .then(({ sendVerificationEmail }) => sendVerificationEmail(email, verificationLink))
+      .catch((err) => console.log("Verification email failed:", err));
 
     return NextResponse.json({ success: true }, { status: 201 });
   } catch (err) {
