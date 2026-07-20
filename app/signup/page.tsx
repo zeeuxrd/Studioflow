@@ -129,14 +129,13 @@ export default function SignUpPage() {
         });
 
         if (result?.error) {
-          router.push("/signin");
+          window.location.href = "/signin";
           return;
         }
 
-        router.push("/onboarding");
-        router.refresh();
+        window.location.href = "/onboarding";
       } catch (authErr) {
-        router.push("/signin");
+        window.location.href = "/signin";
       }
     } catch (err: any) {
       setError(err.message || "Something went wrong");

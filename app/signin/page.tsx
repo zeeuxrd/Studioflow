@@ -50,8 +50,7 @@ export default function SignInPage() {
         return;
       }
 
-      router.push("/dashboard");
-      router.refresh();
+      window.location.href = "/dashboard";
     } catch (err: any) {
       console.error("Sign in error:", err);
       setError("Invalid email or password");
