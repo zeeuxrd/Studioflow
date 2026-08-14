@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { verifyTransaction, getTransactionByReference } from '@/lib/flutterwave';
 import { recordPurchase } from '@/lib/services/purchase.service';
 import type { TransactionData } from '@/lib/providers/payment-provider';
+import { getBaseUrl } from '@/lib/utils';
 
 export async function GET(request: Request) {
   try {
@@ -48,7 +49,7 @@ export async function GET(request: Request) {
     }
 
     if (flutterwaveData && flutterwaveData.status === 'successful') {
-      const result = await recordPurchase(tx_ref, flutterwaveData);
+      const result = await recordPurchase(tx_ref, flutterwaveData, getBaseUrl(request));
       if (!result) {
         return NextResponse.json({ verified: false, error: 'Product not found' });
       }

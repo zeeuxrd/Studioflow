@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth';
 import { initiateSubscription } from '@/lib/flutterwave';
 import { PLANS } from '@/lib/plans';
 import { unauthorized, badRequest } from '@/lib/api-error';
+import { getBaseUrl } from '@/lib/utils';
 
 export async function POST(request: Request) {
   try {
@@ -41,7 +42,7 @@ export async function POST(request: Request) {
     }
 
     const tx_ref = `SUB_${session.user.id.slice(0, 8)}_${Date.now()}`;
-    const redirect_url = `${process.env.AUTH_URL || 'http://localhost:3000'}/dashboard?subscription=success&tx_ref=${tx_ref}`;
+    const redirect_url = `${getBaseUrl(request)}/dashboard?subscription=success&tx_ref=${tx_ref}`;
 
     await prisma.subscription.upsert({
       where: { user_id: session.user.id },

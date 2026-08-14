@@ -1,3 +1,7 @@
+export function getBaseUrl(request: Request): string {
+  return new URL(request.url).origin;
+}
+
 export function generateDownloadToken(): string {
   const chars = 'abcdef0123456789';
   let token = '';

@@ -3,6 +3,7 @@ import { verifyTransaction } from '@/lib/flutterwave';
 import { recordPurchase } from '@/lib/services/purchase.service';
 import { verifyWebhookSignature } from '@/lib/webhook-verifier';
 import { apiError } from '@/lib/api-error';
+import { getBaseUrl } from '@/lib/utils';
 
 export async function POST(request: Request) {
   try {
@@ -38,7 +39,7 @@ export async function POST(request: Request) {
       return apiError('Verification failed', 400);
     }
 
-    const result = await recordPurchase(tx_ref, { ...event.data, id });
+    const result = await recordPurchase(tx_ref, { ...event.data, id }, getBaseUrl(request));
 
     if (!result) {
       return NextResponse.json({ message: 'Could not record purchase - product may not exist' });

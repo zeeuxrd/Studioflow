@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { badRequest } from "@/lib/api-error";
+import { getBaseUrl } from "@/lib/utils";
 
 export async function POST(req: Request) {
   try {
@@ -58,7 +59,7 @@ export async function POST(req: Request) {
       },
     });
 
-    const verificationLink = `${process.env.AUTH_URL || "http://localhost:3000"}/api/auth/verify-email?token=${token}`;
+    const verificationLink = `${getBaseUrl(req)}/api/auth/verify-email?token=${token}`;
 
     // Send verification email in non-blocking background task for instant UI response
     import("@/lib/email")

@@ -13,7 +13,7 @@ type FlutterwaveWebhookData = TransactionData & {
   meta?: { buyer_email?: string; title?: string };
 };
 
-export async function recordPurchase(txRef: string, flutterwaveData: FlutterwaveWebhookData): Promise<PurchaseResult | null> {
+export async function recordPurchase(txRef: string, flutterwaveData: FlutterwaveWebhookData, baseUrl: string): Promise<PurchaseResult | null> {
   const productId = txRef.split('_')[1];
   const product = await prisma.productDefinition.findUnique({
     where: { product_id: productId },
@@ -61,7 +61,7 @@ export async function recordPurchase(txRef: string, flutterwaveData: Flutterwave
   sendPurchaseEmail({
     buyerEmail: flutterwaveData.customer?.email || '',
     productTitle: product.title,
-    downloadLink: `${process.env.AUTH_URL || 'http://localhost:3000'}/download/${downloadToken}`,
+    downloadLink: `${baseUrl}/download/${downloadToken}`,
   }).catch((err) => console.error('Purchase email failed:', err));
 
   return { downloadToken, ownerId, productTitle: product.title };

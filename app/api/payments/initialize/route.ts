@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { initializePayment } from '@/lib/flutterwave';
 import { badRequest } from '@/lib/api-error';
+import { getBaseUrl } from '@/lib/utils';
 
 export async function POST(request: Request) {
   try {
@@ -29,7 +30,7 @@ export async function POST(request: Request) {
     }
 
     const tx_ref = `SF_${product_id}_${Date.now()}`;
-    const redirect_url = `${process.env.AUTH_URL || 'http://localhost:3000'}/products/${product_id}?payment=success`;
+    const redirect_url = `${getBaseUrl(request)}/products/${product_id}?payment=success`;
 
     const { link } = await initializePayment({
       amount: product.monetization_price_suggestion / 100,

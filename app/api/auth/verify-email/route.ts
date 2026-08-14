@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getBaseUrl } from "@/lib/utils";
 
 export async function GET(request: Request) {
   try {
@@ -30,9 +31,9 @@ export async function GET(request: Request) {
 
     await prisma.verificationToken.delete({ where: { token } });
 
-    return NextResponse.redirect(`${process.env.AUTH_URL || "http://localhost:3000"}/verify-email/success`);
+    return NextResponse.redirect(`${getBaseUrl(request)}/verify-email/success`);
   } catch (err) {
     console.error("Verify email error:", err);
-    return NextResponse.redirect(`${process.env.AUTH_URL || "http://localhost:3000"}/verify-email/error`);
+    return NextResponse.redirect(`${getBaseUrl(request)}/verify-email/error`);
   }
 }

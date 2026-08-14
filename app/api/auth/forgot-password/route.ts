@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
 import { badRequest } from "@/lib/api-error";
+import { getBaseUrl } from "@/lib/utils";
 
 export async function POST(req: Request) {
   try {
@@ -27,7 +28,7 @@ export async function POST(req: Request) {
       },
     });
 
-    const resetLink = `${process.env.AUTH_URL || "http://localhost:3000"}/reset-password/${token}`;
+    const resetLink = `${getBaseUrl(req)}/reset-password/${token}`;
 
     try {
       const { sendPasswordResetEmail } = await import("@/lib/email");
