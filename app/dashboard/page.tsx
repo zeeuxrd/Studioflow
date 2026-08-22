@@ -37,6 +37,20 @@ function DashboardContent() {
     return 'Good evening';
   };
 
+  const THOUGHTFUL_QUESTIONS = [
+    (name: string) => `${name}, where should we begin?`,
+    (name: string) => `What's on your mind today, ${name}?`,
+    () => "What story are you ready to tell?",
+    (name: string) => `What would you like to create today, ${name}?`,
+    () => "What's the idea you've been sitting on?",
+    () => "Ready to turn a thought into something real?",
+    () => "What's worth writing about today?",
+  ];
+  const GREETING_STORAGE_KEY = "sf-dashboard-greeting";
+  const GREETING_STALE_MS = 6 * 60 * 60 * 1000; // refresh after 6h away, or a new login
+
+  const [greeting, setGreeting] = useState<string | null>(null);
+
   const [niche, setNiche] = useState('');
   const [formatStyle, setFormatStyle] = useState<'all' | 'how-to' | 'controversial' | 'listicle' | 'story'>('all');
   const [styleMenuOpen, setStyleMenuOpen] = useState(false);
@@ -53,6 +67,27 @@ function DashboardContent() {
   const [isProductizing, setIsProductizing] = useState<string | null>(null);
   const [products, setProducts] = useState<Record<string, Product>>({});
   const [isPublishing, setIsPublishing] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!firstName) return;
+    try {
+      const stored = localStorage.getItem(GREETING_STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored) as { question: string; ts: number };
+        if (Date.now() - parsed.ts < GREETING_STALE_MS) {
+          setGreeting(parsed.question);
+          return;
+        }
+      }
+    } catch {}
+
+    const pick = THOUGHTFUL_QUESTIONS[Math.floor(Math.random() * THOUGHTFUL_QUESTIONS.length)];
+    const question = pick(firstName);
+    setGreeting(question);
+    try {
+      localStorage.setItem(GREETING_STORAGE_KEY, JSON.stringify({ question, ts: Date.now() }));
+    } catch {}
+  }, [firstName]);
 
   const searchParams = useSearchParams();
   const [subVerifying, setSubVerifying] = useState(false);
@@ -575,7 +610,7 @@ function DashboardContent() {
         {/* Welcome Dashboard when no ideas generated */}
         {ideas.length === 0 && !isGenerating && (
           <div className={styles.welcomeContainer}>
-            <h1 className={styles.welcomeTitle}>{firstName}, your next big idea awaits</h1>
+            <h1 className={styles.welcomeTitle}>{greeting ?? `${firstName}, where should we begin?`}</h1>
 
             {/* Inline input bar inside welcome container */}
             {renderCommandInput(false)}

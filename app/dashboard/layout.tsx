@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { 
@@ -115,7 +116,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Sidebar (Left) */}
       <aside className={`${styles.sidebar} ${mobileMenuOpen ? styles.sidebarOpen : ""}`}>
         <div className={styles.sidebarBrand}>
-          <span className={styles.sidebarLogo}>SF</span>
+          <span className={styles.sidebarLogo}>
+            <Image src="/images/assets/favicon.svg" alt="StudioFlow" width={20} height={20} />
+          </span>
           <span className={styles.sidebarBrandName}>StudioFlow</span>
         </div>
 
@@ -128,7 +131,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Search button styled like menu links */}
           <button
             className={styles.sidebarLink}
-            style={{ marginBottom: '16px' }}
+            style={{ marginBottom: '8px' }}
             title="Search"
             onClick={() => {
               setSearchOpen(!searchOpen);

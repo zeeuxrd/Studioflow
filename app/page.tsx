@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect, useRef, useLayoutEffect } from 'react';
-import { ArrowUpRight, Sparkles, Music, Play, Star, Check, ChevronDown, MapPin, Phone, Mail } from "lucide-react";
+import { ArrowUpRight, Sparkles, Music, Play, Star, Check, ChevronDown, ChevronRight, MessageSquarePlus, Search, Package, BarChart3, MessageCircle, Sun, Send, Crown, Lightbulb, PenLine, Mic, Smile, ThumbsUp, Download, FileText, Share2, CreditCard, ShieldCheck, Menu, X } from "lucide-react";
 import styles from './page.module.css';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -49,6 +50,8 @@ export default function MarketingPage() {
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
   const [subscribing, setSubscribing] = useState<string | null>(null);
   const [faqActiveIndex, setFaqActiveIndex] = useState<number | null>(0);
+  const [newsletterSubscribed, setNewsletterSubscribed] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const featuresRef = useRef<HTMLDivElement>(null);
   const heroRef = useRef<HTMLElement>(null);
   const heroCtaRef = useRef<HTMLAnchorElement>(null);
@@ -60,10 +63,170 @@ export default function MarketingPage() {
   const faqRef = useRef<HTMLElement>(null);
   const footerRef = useRef<HTMLElement>(null);
 
+  const dashboardPreviewRef = useRef<HTMLDivElement>(null);
+  const dpCanvasRef = useRef<HTMLDivElement>(null);
+  const demoCursorRef = useRef<HTMLDivElement>(null);
+  const demoInputRowRef = useRef<HTMLDivElement>(null);
+  const demoSendBtnRef = useRef<HTMLSpanElement>(null);
+  const demoChatEndRef = useRef<HTMLDivElement>(null);
+  const [demoInputText, setDemoInputText] = useState('');
+  const [demoChatOpen, setDemoChatOpen] = useState(false);
+  const [demoUserMsg, setDemoUserMsg] = useState('');
+  const [demoAiTyping, setDemoAiTyping] = useState(false);
+  const [demoAiReply, setDemoAiReply] = useState('');
+  const [demoIdeas, setDemoIdeas] = useState<string[]>([]);
+  const [demoSelectedIdea, setDemoSelectedIdea] = useState<number | null>(null);
+  const [demoUserPick, setDemoUserPick] = useState('');
+  const [demoGenerating, setDemoGenerating] = useState(false);
+  const [demoPost, setDemoPost] = useState('');
+
+  useEffect(() => {
+    const canvas = dpCanvasRef.current;
+    if (!canvas) return;
+    canvas.scrollTo({ top: canvas.scrollHeight, behavior: 'smooth' });
+  }, [demoChatOpen, demoUserMsg, demoAiTyping, demoAiReply, demoIdeas, demoSelectedIdea, demoUserPick, demoGenerating, demoPost]);
+
+  const DEMO_NICHE = 'Productivity tips for remote workers';
+  const DEMO_AI_REPLY = "Here are a few ideas tailored to your niche:";
+  const DEMO_POST = "🌅 Struggling to focus at home? Here's what actually works: block your first hour every morning for deep work — no email, no Slack, no notifications.\n\nStart small: even 60 focused minutes beats a scattered 8-hour day. Pair it with a 5-minute planning ritual the night before so you know exactly what you're diving into.\n\nDo this for 2 weeks straight and watch your output (and your sanity) completely transform. 🚀";
+  const DEMO_IDEAS = [
+    '5 Morning Habits That Boost Remote Productivity',
+    'The Ultimate WFH Workspace Setup Checklist',
+    'How to Avoid Burnout Working From Home',
+  ];
+
+  useEffect(() => {
+    let cancelled = false;
+    const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+    const moveCursorTo = (el: HTMLElement | null) => {
+      if (!el || !dashboardPreviewRef.current || !demoCursorRef.current) return Promise.resolve();
+      const containerRect = dashboardPreviewRef.current.getBoundingClientRect();
+      const rect = el.getBoundingClientRect();
+      const x = rect.left + rect.width / 2 - containerRect.left;
+      const y = rect.top + rect.height / 2 - containerRect.top;
+      return new Promise<void>((resolve) => {
+        gsap.to(dashboardPreviewRef.current, { scale: 1.035, duration: 0.5, ease: 'power2.out' });
+        gsap.to(demoCursorRef.current, {
+          left: x,
+          top: y,
+          opacity: 1,
+          duration: 0.9,
+          ease: 'power2.inOut',
+          onComplete: () => {
+            gsap.to(dashboardPreviewRef.current, { scale: 1.015, duration: 0.5, ease: 'power2.inOut' });
+            resolve();
+          },
+        });
+      });
+    };
+
+    const clickPulse = () => {
+      return new Promise<void>((resolve) => {
+        const tl = gsap.timeline({ onComplete: () => resolve() });
+        tl.to(demoCursorRef.current, { scale: 0.7, duration: 0.12 }, 0)
+          .to(dashboardPreviewRef.current, { scale: 1.05, duration: 0.15, ease: 'power2.out' }, 0)
+          .to(demoCursorRef.current, { scale: 1, duration: 0.2 }, 0.12)
+          .to(dashboardPreviewRef.current, { scale: 1, duration: 0.6, ease: 'power2.inOut' }, 0.3);
+      });
+    };
+
+    const typeText = async (text: string, setter: (v: string) => void, delay = 35) => {
+      for (let i = 0; i <= text.length; i++) {
+        if (cancelled) return;
+        setter(text.slice(0, i));
+        await sleep(delay);
+      }
+    };
+
+    if (dashboardPreviewRef.current) gsap.set(dashboardPreviewRef.current, { transformOrigin: 'center center' });
+
+    const runDemo = async () => {
+      if (demoCursorRef.current) gsap.set(demoCursorRef.current, { opacity: 0 });
+      await sleep(1500);
+
+      while (!cancelled) {
+        setDemoInputText('');
+        setDemoChatOpen(false);
+        setDemoUserMsg('');
+        setDemoAiTyping(false);
+        setDemoAiReply('');
+        setDemoIdeas([]);
+        setDemoSelectedIdea(null);
+        setDemoUserPick('');
+        setDemoGenerating(false);
+        setDemoPost('');
+
+        await sleep(1000);
+        if (cancelled) break;
+
+        await moveCursorTo(demoInputRowRef.current);
+        if (cancelled) break;
+        await clickPulse();
+        await typeText(DEMO_NICHE, setDemoInputText);
+        if (cancelled) break;
+        await sleep(500);
+
+        await moveCursorTo(demoSendBtnRef.current);
+        if (cancelled) break;
+        await clickPulse();
+
+        setDemoChatOpen(true);
+        setDemoUserMsg(DEMO_NICHE);
+        setDemoInputText('');
+        await sleep(600);
+        if (cancelled) break;
+
+        setDemoAiTyping(true);
+        await sleep(1400);
+        if (cancelled) break;
+
+        setDemoAiTyping(false);
+        await typeText(DEMO_AI_REPLY, setDemoAiReply, 18);
+        if (cancelled) break;
+        await sleep(300);
+
+        for (const idea of DEMO_IDEAS) {
+          if (cancelled) break;
+          setDemoIdeas((prev) => [...prev, idea]);
+          await sleep(350);
+        }
+        if (cancelled) break;
+
+        await sleep(1000);
+        if (cancelled) break;
+
+        const ideaCard = dashboardPreviewRef.current?.querySelector<HTMLElement>(`.${styles.dpIdeaCard}`);
+        await moveCursorTo(ideaCard ?? null);
+        if (cancelled) break;
+        await clickPulse();
+        setDemoSelectedIdea(0);
+        await sleep(500);
+        if (cancelled) break;
+
+        setDemoUserPick(`I'll go with this one: "${DEMO_IDEAS[0]}"`);
+        await sleep(800);
+        if (cancelled) break;
+
+        setDemoGenerating(true);
+        await sleep(1400);
+        if (cancelled) break;
+
+        setDemoGenerating(false);
+        await typeText(DEMO_POST, setDemoPost, 16);
+        if (cancelled) break;
+
+        await sleep(6500);
+      }
+    };
+
+    runDemo();
+    return () => { cancelled = true; };
+  }, []);
+
   const handleCtaEnter = () => {
     gsap.to(heroCtaRef.current, {
       scale: 1.05,
-      backgroundColor: '#a88aed',
       duration: 0.3,
       ease: 'power2.out',
     });
@@ -72,7 +235,6 @@ export default function MarketingPage() {
   const handleCtaLeave = () => {
     gsap.to(heroCtaRef.current, {
       scale: 1,
-      backgroundColor: 'var(--color-primary)',
       duration: 0.3,
       ease: 'power2.out',
     });
@@ -87,30 +249,12 @@ export default function MarketingPage() {
       const header = section.querySelector(`.${styles.featuresHeader}`);
       if (!grid || !header) return;
 
-      const title = header.querySelector(`.${styles.featuresTitle}`);
-      const desc = header.querySelector(`.${styles.featuresDesc}`);
-
+      const headerChildren = Array.from(header.children);
       const cards = Array.from(grid.children);
       if (cards.length === 0) return;
 
-      const rotations = [-1.5, 1.2, -1];
-
-      const sparkle = title?.querySelector(`.${styles.featuresTitleIcon}`);
-
-      gsap.set([title, desc], { y: 40, opacity: 0 });
-      if (sparkle) gsap.set(sparkle, { scale: 0, rotation: 0 });
-      gsap.set(cards, { scale: 0.9, opacity: 0, rotation: 0 });
-      gsap.set([cards[0], cards[2]], { y: 40, scale: 1 });
-      gsap.set(cards[1], { y: 0 });
-
-      cards.forEach((card) => {
-        const els = card.querySelectorAll(
-          `.${styles.featuresCardStep}, .${styles.featuresCardLabel}, .${styles.featuresCardDesc}`
-        );
-        gsap.set(els, { y: 15, opacity: 0 });
-        const arrow = card.querySelector(`.${styles.featuresCardArrow}`);
-        if (arrow) gsap.set(arrow, { x: -10, y: 10, opacity: 0 });
-      });
+      gsap.set(headerChildren, { y: 30, opacity: 0 });
+      gsap.set(cards, { y: 30, opacity: 0 });
 
       const tl = gsap.timeline({
         scrollTrigger: {
@@ -120,56 +264,8 @@ export default function MarketingPage() {
         },
       });
 
-      tl.to(title, { y: 0, opacity: 1, duration: 1, ease: 'power3.out' }, 0);
-      if (sparkle) {
-        tl.to(sparkle, { scale: 1, rotation: 90, duration: 0.6, ease: 'back.out(2)' }, 0);
-      }
-      tl.to(desc, { y: 0, opacity: 1, duration: 1, ease: 'power3.out' }, '-=0.3');
-
-      cards.forEach((card, i) => {
-        const cardStart = i * 0.25;
-
-        if (i === 1) {
-          tl.to(card, {
-            scale: 1,
-            opacity: 1,
-            rotation: rotations[i],
-            duration: 0.7,
-            ease: 'back.out(1.5)',
-          }, cardStart);
-        } else {
-          tl.to(card, {
-            y: 0,
-            opacity: 1,
-            duration: 0.7,
-            ease: 'power3.out',
-          }, cardStart);
-        }
-
-        const internal = card.querySelectorAll(
-          `.${styles.featuresCardStep}, .${styles.featuresCardLabel}, .${styles.featuresCardDesc}`
-        );
-        if (internal.length > 0) {
-          tl.to(internal, {
-            y: 0,
-            opacity: 1,
-            duration: 0.35,
-            stagger: 0.08,
-            ease: 'power2.out',
-          }, cardStart + 0.4);
-        }
-
-        const arrow = card.querySelector(`.${styles.featuresCardArrow}`);
-        if (arrow) {
-          tl.to(arrow, {
-            x: 0,
-            y: 0,
-            opacity: 1,
-            duration: 0.5,
-            ease: 'power3.out',
-          }, cardStart);
-        }
-      });
+      tl.to(headerChildren, { y: 0, opacity: 1, duration: 0.8, stagger: 0.12, ease: 'power3.out' }, 0);
+      tl.to(cards, { y: 0, opacity: 1, duration: 0.7, stagger: 0.15, ease: 'power3.out' }, 0.3);
     });
 
     return () => ctx.revert();
@@ -400,7 +496,6 @@ export default function MarketingPage() {
         const onEnter = () => {
           gsap.to(card, {
             scale: 1.03,
-            boxShadow: '0 15px 40px rgba(255, 255, 255, 0.096)',
             duration: 0.3,
             ease: 'power2.out',
             overwrite: 'auto',
@@ -409,7 +504,6 @@ export default function MarketingPage() {
         const onLeave = () => {
           gsap.to(card, {
             scale: 1,
-            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.2)',
             duration: 0.3,
             ease: 'power2.out',
             overwrite: 'auto',
@@ -456,23 +550,11 @@ export default function MarketingPage() {
     if (!el) return;
 
     const ctx = gsap.context(() => {
-      const cols = Array.from(el.children);
-      const hiwCards = cols.map((col) => col.querySelector(`.${styles.hiwCard}`)).filter(Boolean);
+      const hiwCards = Array.from(el.children);
       if (hiwCards.length === 0) return;
-      const rotations = [-3, 2, 1.5];
-      const tapes = cols.map((col) => col.querySelector(`.${styles.hiwTape}`)).filter(Boolean);
-      const graphics = cols.map((col) => col.querySelector(`.${styles.hiwGraphic}`)).filter(Boolean);
-      const icons = cols.map((col) => { const g = col.querySelector(`.${styles.hiwGraphic}`); return g ? Array.from(g.children) : []; });
-      gsap.set(hiwCards, { scale: 0.95, rotation: 0 });
-      gsap.set(tapes, { scaleY: 1.6, transformOrigin: 'top center' });
-      icons.forEach((group) => gsap.set(group, { scale: 0.3, opacity: 0 }));
+      gsap.set(hiwCards, { y: 40, opacity: 0 });
       const tl = gsap.timeline({ scrollTrigger: { trigger: el, start: 'top 85%', once: true } });
-      hiwCards.forEach((card, i) => {
-        tl.to(card, { scale: 1, opacity: 1, rotation: rotations[i], duration: 0.9, ease: 'back.out(1.7)' }, i * 0.4);
-        if (tapes[i]) tl.to(tapes[i], { scaleY: 1, duration: 0.25, ease: 'back.out(2)' }, '-=0.35');
-        if (icons[i]?.length > 0) tl.to(icons[i], { scale: 1, opacity: 1, duration: 0.3, ease: 'power3.out' }, '-=0.1');
-        if (graphics[i]) tl.call(() => { const tw = gsap.to(graphics[i], { scale: 1.06, duration: 1.2, ease: 'sine.inOut', yoyo: true, repeat: -1 }); ctx.add(tw.revert.bind(tw)); });
-      });
+      tl.to(hiwCards, { y: 0, opacity: 1, duration: 0.8, stagger: 0.15, ease: 'power3.out' });
     });
 
     return () => ctx.revert();
@@ -552,11 +634,11 @@ export default function MarketingPage() {
       }
       if (initialRender.current) {
         gsap.set(item, {
-          backgroundColor: isOpen ? '#1A1A1A' : '',
+          backgroundColor: '#1A1A1A',
         });
       } else {
         gsap.to(item, {
-          backgroundColor: isOpen ? '#1A1A1A' : '',
+          backgroundColor: '#1A1A1A',
           duration: 0.25,
           ease: 'power2.out',
           overwrite: 'auto',
@@ -680,166 +762,197 @@ export default function MarketingPage() {
         {/* ——— NAV ——— */}
         <header className={styles.nav}>
           <div className={styles.logoContainer}>
-            <div className={styles.logoIcon}></div>
+            <Image src="/images/assets/favicon.svg" alt="" width={24} height={24} className={styles.logoIcon} />
             <span className={styles.logoText}>StudioFlow</span>
           </div>
+
+          <nav className={`${styles.navLinks} ${mobileNavOpen ? styles.navLinksOpen : ''}`}>
+            <Link href="/#how-it-works" className={styles.navLink} onClick={() => setMobileNavOpen(false)}>How it works</Link>
+            <Link href="/#features" className={styles.navLink} onClick={() => setMobileNavOpen(false)}>Features</Link>
+            <Link href="/#pricing" className={styles.navLink} onClick={() => setMobileNavOpen(false)}>Pricing</Link>
+            <Link href="/signup" className={styles.navLinkMobileCta} onClick={() => setMobileNavOpen(false)}>Sign up</Link>
+          </nav>
 
           <div className={styles.navRight}>
             <Link href="/signup" className={styles.navCta}>
               Sign up <span className={styles.navCtaArrow}><ArrowUpRight size={14} /></span>
             </Link>
+            <button
+              type="button"
+              className={styles.navHamburgerBtn}
+              onClick={() => setMobileNavOpen((v) => !v)}
+              aria-label="Toggle menu"
+              aria-expanded={mobileNavOpen}
+            >
+              {mobileNavOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
           </div>
         </header>
 
         {/* ——— HERO ——— */}
         <main className={styles.hero} ref={heroRef}>
           <div className={styles.heroContent} ref={headlineRef}>
-            {/* Line 1 */}
             <div className={styles.headlineLine}>
-              <h1 className={styles.headlineText}>Turning posts</h1>
-            </div>
-
-            {/* Line 2 */}
-            <div className={styles.headlineLine}>
-              <h1 className={styles.headlineText}>
-                <span className={styles.pushDown}>into</span>{' '}
-                <span className={styles.pillPurple}>
-                  <span className={styles.sparkle}><Sparkles size={14} /></span>
-                  <span className={styles.pillWord}>products</span>
-                </span>
-              </h1>
-            </div>
-
-            {/* Line 3 */}
-            <div className={styles.headlineLine}>
-              <h1 className={styles.headlineText}>
-                and digital{' '}
-                <span className={styles.pillYellow}>revenue<Sparkles size={12} /></span>
-              </h1>
+              <h1 className={styles.headlineText}>Turning posts into products<br />and digital revenue.</h1>
             </div>
 
             <p className={styles.heroDescBottom}>
               Turn your social media content into sellable digital products with AI that writes in your voice.
             </p>
 
-            <Link href="/signup" className={styles.heroCta} ref={heroCtaRef} onMouseEnter={handleCtaEnter} onMouseLeave={handleCtaLeave}>
-              Get Started <span className={styles.navCtaArrow}><ArrowUpRight size={14} /></span>
-            </Link>
+            <div className={styles.heroCtaRow}>
+              <Link href="/signup" className={styles.heroCta} ref={heroCtaRef} onMouseEnter={handleCtaEnter} onMouseLeave={handleCtaLeave}>
+                Get Started <span className={styles.navCtaArrow}><ArrowUpRight size={14} /></span>
+              </Link>
+            </div>
+          </div>
 
-            <div className={styles.logoBar}>
-              <div className={styles.logoBarItem}>
-                <span className={`${styles.logoBarIcon} ${styles.logoBarIconSmall}`} style={{ fontSize: '12.48px' }}>𝕏</span>
-                <span>Twitter / X</span>
+          {/* ——— Live dashboard preview mockup ——— */}
+          <div className={styles.dashboardPreviewGlow}>
+          <div className={styles.dashboardPreview} ref={dashboardPreviewRef}>
+            <div className={styles.demoCursor} ref={demoCursorRef}>
+              <svg width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M4 2.5L4 21.5L9.2 16.8L12.5 23.5L15.8 22L12.6 15.2L19.5 15L4 2.5Z" fill="#1a1a1a" stroke="#fff" strokeWidth="1.5" strokeLinejoin="round" />
+              </svg>
+            </div>
+            <aside className={styles.dpSidebar}>
+              <div className={styles.dpBrand}>
+                <Image src="/images/assets/favicon.svg" alt="" width={20} height={20} />
+                <span className={styles.dpBrandName}>StudioFlow</span>
               </div>
-              <div className={styles.logoBarItem}>
-                <span className={styles.logoBarIcon}>in</span>
-                <span>LinkedIn</span>
+
+              <div className={styles.dpLink}><MessageSquarePlus size={16} /><span>New Chat</span></div>
+              <div className={styles.dpLink}><Search size={16} /><span>Search chats</span></div>
+
+              <nav className={styles.dpNav}>
+                <div className={`${styles.dpLink} ${styles.dpLinkActive}`}><Package size={16} /><span>Products</span></div>
+                <div className={styles.dpLink}><BarChart3 size={16} /><span>Analytics</span></div>
+                <div className={styles.dpLink}><MessageCircle size={16} /><span>Chats</span><ChevronRight size={12} className={styles.dpLinkChevron} /></div>
+              </nav>
+
+              <div className={styles.dpFreeBadge}>
+                <div className={styles.dpFreeRow}><span>Free</span><span>0 / 7</span></div>
+                <div className={styles.dpFreeBar}><div className={styles.dpFreeBarFill}></div></div>
               </div>
-              <div className={styles.logoBarItem}>
-                <span className={styles.logoBarIcon}>
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
-                    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
-                    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
-                  </svg>
-                </span>
-                <span>Instagram</span>
+            </aside>
+
+            <div className={styles.dpMain}>
+              <div className={styles.dpMainHeader}>
+                <div className={styles.dpHeaderActions}>
+                  <span className={styles.dpThemeToggle}><Sun size={15} /></span>
+                  <span className={styles.dpUpgradeBtn}>Upgrade <Crown size={12} /></span>
+                </div>
               </div>
-              <div className={styles.logoBarItem}>
-                <span className={`${styles.logoBarIcon} ${styles.logoBarIconSmall}`}><Music size={16} /></span>
-                <span>TikTok</span>
-              </div>
-              <div className={styles.logoBarItem}>
-                <span className={styles.logoBarIcon}><Play size={16} /></span>
-                <span>YouTube</span>
+
+              <div className={`${styles.dpCanvas} ${demoChatOpen ? styles.dpCanvasChat : ''}`} ref={dpCanvasRef}>
+                {!demoChatOpen && (
+                  <h2 className={styles.dpGreeting}>Where should we begin?</h2>
+                )}
+
+                {demoChatOpen && (
+                  <div className={styles.dpChatThread}>
+                    <div className={styles.dpChatBubbleUser}>{demoUserMsg}</div>
+
+                    {demoAiTyping && (
+                      <div className={`${styles.dpChatBubbleAi} ${styles.dpThinkingBubble}`}>
+                        <span></span><span></span><span></span>
+                      </div>
+                    )}
+
+                    {!demoAiTyping && demoAiReply && (
+                      <div className={styles.dpChatBubbleAi}>
+                        <p>{demoAiReply}</p>
+                        {demoIdeas.length > 0 && (
+                          <div className={styles.dpIdeaList}>
+                            {demoIdeas.map((idea, i) => (
+                              <div
+                                key={i}
+                                className={`${styles.dpIdeaCard} ${demoSelectedIdea === i ? styles.dpIdeaCardSelected : ''}`}
+                              >
+                                <Sparkles size={13} />
+                                <span>{idea}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {demoUserPick && (
+                      <div className={styles.dpChatBubbleUser}>{demoUserPick}</div>
+                    )}
+
+                    {demoGenerating && (
+                      <div className={`${styles.dpChatBubbleAi} ${styles.dpThinkingBubble}`}>
+                        <span></span><span></span><span></span>
+                      </div>
+                    )}
+
+                    {!demoGenerating && demoPost && (
+                      <div className={styles.dpChatBubbleAi}>
+                        <span className={styles.dpPostLabel}><Sparkles size={12} /> Generated post</span>
+                        <p>{demoPost}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div className={styles.dpInputRow} ref={demoInputRowRef}>
+                  {demoInputText ? (
+                    <span className={styles.dpInputText}>{demoInputText}</span>
+                  ) : (
+                    <span className={styles.dpInputPlaceholder}>Type a topic or niche...</span>
+                  )}
+                  <div className={styles.dpInputRight}>
+                    <span className={styles.dpSelectStyle}>Select Style <ChevronDown size={12} /></span>
+                    <span className={styles.dpSendBtn} ref={demoSendBtnRef}><Send size={13} /></span>
+                  </div>
+                </div>
+
               </div>
             </div>
+          </div>
           </div>
         </main>
       </div>
 
       {/* ——— HOW IT WORKS ——— */}
-      <section className={styles.howItWorks}>
+      <section className={styles.howItWorks} id="how-it-works">
         <div className={styles.hiwHeaderContainer} ref={hiwHeaderRef}>
-          <h2 className={styles.hiwTitle}>From <span className={styles.hiwTitleAccent}>idea</span> to digital product</h2>
+          <h2 className={styles.hiwTitle}>From idea to <span className={styles.hiwTitleAccent}>digital product</span></h2>
           <p className={styles.hiwSubtitle}>
             Package your insights into revenue-generating assets in minutes.
           </p>
         </div>
 
         <div className={styles.hiwGrid} ref={hiwGridRef}>
-          {/* Column 1 */}
-          <div className={styles.hiwCol}>
-            <div className={styles.hiwHeader}>
-              <div className={styles.hiwHeaderLeft}>
-                <span className={styles.hiwBarPurple}></span>
-                <span>Brainstorming</span>
-              </div>
-              <span className={styles.hiwStepNum}>1</span>
-            </div>
-            <div className={`${styles.hiwCard} ${styles.hiwCardPurple}`}>
-              <div className={styles.hiwTape}></div>
-              <div className={styles.hiwGraphic}>
-                {/* Abstract geometric shape representing "Idea/Brainstorming (Lightbulb)" */}
-                <div className={styles.hiwBulbCentered}>
-                  <div className={styles.geoBulbGlass}></div>
-                  <div className={styles.geoBulbBase}></div>
-                  <div className={styles.geoBulbFilament}></div>
-                  <div className={styles.geoBulbRay1}></div>
-                  <div className={styles.geoBulbRay2}></div>
-                  <div className={styles.geoBulbRay3}></div>
-                  <div className={styles.geoBulbRay4}></div>
-                  <div className={styles.geoBulbRay5}></div>
-                </div>
-              </div>
-              <div className={styles.hiwCardLabel}>Idea Architect</div>
-              <p className={styles.hiwCardDesc}>Produce endless niche ideas tailored for your audience.</p>
+          <div className={`${styles.hiwCard} ${styles.hiwCardSide}`}>
+            <Image src="/images/assets/hiw-card1.jpg" alt="Idea Architect" fill className={styles.hiwCardImg} />
+            <div className={styles.hiwCardOverlay} />
+            <span className={styles.hiwCardIcon}><Lightbulb size={16} /></span>
+            <div className={styles.hiwCardCaption}>
+              <h3 className={styles.hiwCardLabel}>Idea Architect</h3>
+              <p className={styles.hiwCardDesc}>Produce endless niche ideas tailored for your audience.<br />Never run out of content ideas again.</p>
             </div>
           </div>
 
-          {/* Column 2 */}
-          <div className={styles.hiwCol}>
-            <div className={styles.hiwHeader}>
-              <div className={styles.hiwHeaderLeft}>
-                <span className={styles.hiwBarBlue}></span>
-                <span>Creation</span>
-              </div>
-              <span className={styles.hiwStepNum}>2</span>
-            </div>
-            <div className={`${styles.hiwCard} ${styles.hiwCardBlue}`}>
-              <div className={styles.hiwTape}></div>
-              <div className={styles.hiwGraphic}>
-                {/* Abstract geometric shape representing "Speech/Content" */}
-                <div className={styles.geoSpeechBubble}></div>
-                <div className={styles.geoSpeechTail}></div>
-                <div className={styles.geoSpeechDot1}></div>
-                <div className={styles.geoSpeechDot2}></div>
-                <div className={styles.geoSpeechDot3}></div>
-              </div>
-              <div className={styles.hiwCardLabel}>Content Crafter</div>
-              <p className={styles.hiwCardDesc}>Convert your ideas into platform-ready posts instantly.</p>
+          <div className={`${styles.hiwCard} ${styles.hiwCardMiddle}`}>
+            <Image src="/images/assets/hiw-card2.jpg" alt="Content Crafter" fill className={styles.hiwCardImg} />
+            <div className={`${styles.hiwCardOverlay} ${styles.hiwCardOverlayPink}`} />
+            <span className={styles.hiwCardIcon}><PenLine size={16} /></span>
+            <div className={styles.hiwCardCaption}>
+              <h3 className={styles.hiwCardLabel}>Content Crafter</h3>
+              <p className={styles.hiwCardDesc}>Convert your ideas into platform-ready posts instantly.<br />Publish-ready copy in seconds, not hours.</p>
             </div>
           </div>
 
-          {/* Column 3 */}
-          <div className={styles.hiwCol}>
-            <div className={styles.hiwHeader}>
-              <div className={styles.hiwHeaderLeft}>
-                <span className={styles.hiwBarOrange}></span>
-                <span>Monetization</span>
-              </div>
-              <span className={styles.hiwStepNum}>3</span>
-            </div>
-            <div className={`${styles.hiwCard} ${styles.hiwCardOrange}`}>
-              <div className={styles.hiwTape}></div>
-              <div className={styles.hiwGraphic}>
-                {/* Abstract geometric shape representing "Digital Product" */}
-                <div className={styles.geoCardBack}></div>
-                <div className={styles.geoCardFront}></div>
-                <div className={styles.geoSparkle}></div>
-              </div>
-              <div className={styles.hiwCardLabel}>Product Generator</div>
-              <p className={styles.hiwCardDesc}>Package your best content into digital products easily.</p>
+          <div className={`${styles.hiwCard} ${styles.hiwCardSide}`}>
+            <Image src="/images/assets/hiw-card3.jpg" alt="Product Generator" fill className={styles.hiwCardImg} />
+            <div className={styles.hiwCardOverlay} />
+            <span className={styles.hiwCardIcon}><Package size={16} /></span>
+            <div className={styles.hiwCardCaption}>
+              <h3 className={styles.hiwCardLabel}>Product Generator</h3>
+              <p className={styles.hiwCardDesc}>Package your best content into digital products easily.<br />Launch and sell without extra design work.</p>
             </div>
           </div>
         </div>
@@ -847,64 +960,55 @@ export default function MarketingPage() {
 
       {/* ——— FEATURES ——— */}
       <section className={styles.features} ref={featuresRef}>
-        {/* Split Header */}
-        <div className={styles.featuresHeader}>
-          <div className={styles.featuresHeaderLeft}>
-            <h2 className={styles.featuresTitle}>
-              Everything you need to <span className={styles.featuresTitleAccent}>
-                <span className={styles.featuresTitleIcon}><Sparkles size={16} /></span>monetize
-              </span>
-            </h2>
-          </div>
-          <div className={styles.featuresHeaderRight}>
+        <div className={styles.featuresSky}>
+          <div className={styles.featuresHeader}>
+            <h2 className={styles.featuresTitle}>Everything you need<br />to monetize</h2>
             <p className={styles.featuresDesc}>
-              Turn niche ideas into posts and digital products — all in one workspace.
-            </p>
-          </div>
-        </div>
-
-        {/* 3 Cards Grid */}
-        <div className={styles.featuresGrid}>
-          {/* Card 1: Tone & Niche Architect */}
-          <div className={`${styles.featuresCard} ${styles.featuresCardGrey}`}>
-            <div className={styles.featuresCardHeader}>
-              <span className={styles.featuresCardStep}>01</span>
-              <span className={styles.featuresCardArrow}><ArrowUpRight size={14} /></span>
-            </div>
-            <h3 className={styles.featuresCardLabel}>Tone & Niche Architect</h3>
-            <p className={styles.featuresCardDesc}>
-              Define your brand voice and select target niches to align all generated content automatically.
+              We're on a mission to help creators turn ideas into revenue. Turn niche
+              ideas into posts and digital products — all in one workspace.
             </p>
           </div>
 
-          {/* Card 2: Multi-Platform Crafter */}
-          <div className={`${styles.featuresCard} ${styles.featuresCardGreen}`}>
-            <div className={styles.featuresCardHeader}>
-              <span className={styles.featuresCardStep}>02</span>
-              <span className={styles.featuresCardArrow}><ArrowUpRight size={14} /></span>
+          {/* 3 Cards Grid */}
+          <div className={styles.featuresGrid}>
+            {/* Card 1: Performance Analytics */}
+            <div className={styles.featuresCard}>
+              <BarChart3 size={48} strokeWidth={1.25} className={styles.featuresCardIcon} />
+              <h3 className={styles.featuresCardLabel}>Performance Analytics</h3>
+              <p className={styles.featuresCardDesc}>
+                Track which posts and products convert best with real-time insights into views, sales, and revenue.
+                <br />Spot trends before they peak.
+                <br />Make data-driven content decisions daily.
+              </p>
             </div>
-            <h3 className={styles.featuresCardLabel}>Multi-Platform Crafter</h3>
-            <p className={styles.featuresCardDesc}>
-              Create tailored drafts for all major social channels simultaneously with just a single click.
-            </p>
-          </div>
 
-          {/* Card 3: Product Suite Compiler */}
-          <div className={`${styles.featuresCard} ${styles.featuresCardGrey}`}>
-            <div className={styles.featuresCardHeader}>
-              <span className={styles.featuresCardStep}>03</span>
-              <span className={styles.featuresCardArrow}><ArrowUpRight size={14} /></span>
+            {/* Card 2: Built-in Monetization */}
+            <div className={styles.featuresCard}>
+              <CreditCard size={48} strokeWidth={1.25} className={styles.featuresCardIcon} />
+              <h3 className={styles.featuresCardLabel}>Built-in Monetization</h3>
+              <p className={styles.featuresCardDesc}>
+                Sell directly to your audience with secure, built-in checkout — no third-party setup required.
+                <br />Accept payments in multiple currencies.
+                <br />Get paid out fast, with zero integration hassle.
+              </p>
             </div>
-            <h3 className={styles.featuresCardLabel}>Product Suite Compiler</h3>
-            <p className={styles.featuresCardDesc}>
-              Convert your post drafts into templates, checklists, or short ebooks to sell them instantly.
-            </p>
+
+            {/* Card 3: Full Content Ownership */}
+            <div className={styles.featuresCard}>
+              <ShieldCheck size={48} strokeWidth={1.25} className={styles.featuresCardIcon} />
+              <h3 className={styles.featuresCardLabel}>Full Content Ownership</h3>
+              <p className={styles.featuresCardDesc}>
+                Everything you create is 100% yours, with transparent pricing and no hidden platform fees.
+                <br />Export or migrate your content anytime.
+                <br />No lock-in, no surprise charges.
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
       {/* ——— TESTIMONIALS SECTION ——— */}
-      <section className={styles.testimonialsSection} ref={testimonialsRef}>
+      <section className={styles.testimonialsSection} ref={testimonialsRef} id="testimonials">
         <div className={styles.testimonialsHeader}>
           <h2 className={styles.testimonialsTitle}>Trusted by <span className={styles.testimonialsTitleAccent}>creators</span></h2>
           <p className={styles.testimonialsDesc}>See what creators are saying about turning their content into revenue with StudioFlow.</p>
@@ -914,52 +1018,62 @@ export default function MarketingPage() {
           <div className={styles.marqueeTrack}>
             {/* ── First set ── */}
             <div className={`${styles.testimonialCard} ${styles.testimonialCardBlack}`}>
+              <span className={styles.testimonialQuote}>&ldquo;</span>
               <div className={styles.testimonialStars}><Star size={14} /><Star size={14} /><Star size={14} /><Star size={14} /><Star size={14} /></div>
               <p className={styles.testimonialText}>Within minutes of starting, I turned my LinkedIn post drafts into a $15 checklist. Made my first sale within 2 hours. Extremely simple tool!</p>
               <div className={styles.testimonialAuthor}>Stephen A.</div>
             </div>
             <div className={`${styles.testimonialCard} ${styles.testimonialCardLavender}`}>
+              <span className={styles.testimonialQuote}>&ldquo;</span>
               <div className={styles.testimonialStars}><Star size={14} /><Star size={14} /><Star size={14} /><Star size={14} /><Star size={14} /></div>
               <p className={styles.testimonialText}>Super professional and clean. Converting my X threads into monetized PDF checklists is a 1-click process now. Highly recommended!</p>
               <div className={styles.testimonialAuthor}>Sara L.</div>
             </div>
             <div className={`${styles.testimonialCard} ${styles.testimonialCardWhite1}`}>
+              <span className={styles.testimonialQuote}>&ldquo;</span>
               <div className={styles.testimonialStars}><Star size={14} /><Star size={14} /><Star size={14} /><Star size={14} /><Star size={14} /></div>
               <p className={styles.testimonialText}>I recently used StudioFlow to compile my guide. The workflow is incredibly smooth and the output ownership structure is 100% transparent.</p>
               <div className={styles.testimonialAuthor}>Alex M.</div>
             </div>
             <div className={`${styles.testimonialCard} ${styles.testimonialCardWhite2}`}>
+              <span className={styles.testimonialQuote}>&ldquo;</span>
               <div className={styles.testimonialStars}><Star size={14} /><Star size={14} /><Star size={14} /><Star size={14} /><Star size={14} /></div>
               <p className={styles.testimonialText}>Really useful system. The AI Tone Architect matches my writing voice perfectly. I don&apos;t sound like a generic chatbot anymore.</p>
               <div className={styles.testimonialAuthor}>Barry W.</div>
             </div>
             <div className={`${styles.testimonialCard} ${styles.testimonialCardChartreuse}`}>
+              <span className={styles.testimonialQuote}>&ldquo;</span>
               <div className={styles.testimonialStars}><Star size={14} /><Star size={14} /><Star size={14} /><Star size={14} /><Star size={14} /></div>
               <p className={styles.testimonialText}>Converted three of my newsletter articles into a short course outline. StudioFlow handled the pricing suggestion and structure instantly. Exceptional.</p>
               <div className={styles.testimonialAuthor}>Simon F.</div>
             </div>
             {/* ── Duplicate set for seamless loop ── */}
             <div className={`${styles.testimonialCard} ${styles.testimonialCardBlack}`} aria-hidden="true">
+              <span className={styles.testimonialQuote}>&ldquo;</span>
               <div className={styles.testimonialStars}><Star size={14} /><Star size={14} /><Star size={14} /><Star size={14} /><Star size={14} /></div>
               <p className={styles.testimonialText}>Within minutes of starting, I turned my LinkedIn post drafts into a $15 checklist. Made my first sale within 2 hours. Extremely simple tool!</p>
               <div className={styles.testimonialAuthor}>Stephen A.</div>
             </div>
             <div className={`${styles.testimonialCard} ${styles.testimonialCardLavender}`} aria-hidden="true">
+              <span className={styles.testimonialQuote}>&ldquo;</span>
               <div className={styles.testimonialStars}><Star size={14} /><Star size={14} /><Star size={14} /><Star size={14} /><Star size={14} /></div>
               <p className={styles.testimonialText}>Super professional and clean. Converting my X threads into monetized PDF checklists is a 1-click process now. Highly recommended!</p>
               <div className={styles.testimonialAuthor}>Sara L.</div>
             </div>
             <div className={`${styles.testimonialCard} ${styles.testimonialCardWhite1}`} aria-hidden="true">
+              <span className={styles.testimonialQuote}>&ldquo;</span>
               <div className={styles.testimonialStars}><Star size={14} /><Star size={14} /><Star size={14} /><Star size={14} /><Star size={14} /></div>
               <p className={styles.testimonialText}>I recently used StudioFlow to compile my guide. The workflow is incredibly smooth and the output ownership structure is 100% transparent.</p>
               <div className={styles.testimonialAuthor}>Alex M.</div>
             </div>
             <div className={`${styles.testimonialCard} ${styles.testimonialCardWhite2}`} aria-hidden="true">
+              <span className={styles.testimonialQuote}>&ldquo;</span>
               <div className={styles.testimonialStars}><Star size={14} /><Star size={14} /><Star size={14} /><Star size={14} /><Star size={14} /></div>
               <p className={styles.testimonialText}>Really useful system. The AI Tone Architect matches my writing voice perfectly. I don&apos;t sound like a generic chatbot anymore.</p>
               <div className={styles.testimonialAuthor}>Barry W.</div>
             </div>
             <div className={`${styles.testimonialCard} ${styles.testimonialCardChartreuse}`} aria-hidden="true">
+              <span className={styles.testimonialQuote}>&ldquo;</span>
               <div className={styles.testimonialStars}><Star size={14} /><Star size={14} /><Star size={14} /><Star size={14} /><Star size={14} /></div>
               <p className={styles.testimonialText}>Converted three of my newsletter articles into a short course outline. StudioFlow handled the pricing suggestion and structure instantly. Exceptional.</p>
               <div className={styles.testimonialAuthor}>Simon F.</div>
@@ -1022,7 +1136,7 @@ export default function MarketingPage() {
                 className={`${styles.pricingCardButton} ${styles.pricingCardButtonOutline}`}
                 onClick={() => handleSubscribe('starter')}
                 disabled={subscribing === 'starter'}
-                style={{ cursor: 'pointer', border: 'none', fontFamily: 'inherit' }}
+                style={{ cursor: 'pointer', fontFamily: 'inherit' }}
               >
                 {subscribing === 'starter' ? 'Redirecting...' : 'Start free trial'}
               </button>
@@ -1075,7 +1189,7 @@ export default function MarketingPage() {
                 className={`${styles.pricingCardButton} ${styles.pricingCardButtonOutline}`}
                 onClick={() => handleSubscribe('creator')}
                 disabled={subscribing === 'creator'}
-                style={{ cursor: 'pointer', border: 'none', fontFamily: 'inherit' }}
+                style={{ cursor: 'pointer', fontFamily: 'inherit' }}
               >
                 {subscribing === 'creator' ? 'Redirecting...' : 'Start free trial'}
               </button>
@@ -1128,7 +1242,7 @@ export default function MarketingPage() {
                 className={`${styles.pricingCardButton} ${styles.pricingCardButtonOutline}`}
                 onClick={() => handleSubscribe('pro')}
                 disabled={subscribing === 'pro'}
-                style={{ cursor: 'pointer', border: 'none', fontFamily: 'inherit' }}
+                style={{ cursor: 'pointer', fontFamily: 'inherit' }}
               >
                 {subscribing === 'pro' ? 'Redirecting...' : 'Start free trial'}
               </button>
@@ -1166,45 +1280,62 @@ export default function MarketingPage() {
       {/* ——— FAQ SECTION ——— */}
       <section className={styles.faqMockupSection} ref={faqRef}>
         <div className={styles.faqMockupCard}>
-          
-          {/* Header section (centered layout) */}
-          <div className={styles.faqHeaderCol}>
-            <h2 className={styles.faqTitle}>
-              Frequently asked <span className={styles.faqTitleAccent}>questions</span>
-            </h2>
-            <p className={styles.faqDesc}>
-              Have questions about StudioFlow? Learn how our AI-powered creator workspace helps you turn ideas into platform-ready posts and monetized digital products.
-            </p>
-          </div>
+          <div className={styles.faqMockupGrid}>
 
-          {/* Accordion Items Container */}
-          <div className={styles.faqAccordionContainer}>
-            {faqs.map((faq, index) => {
-              const isOpen = faqActiveIndex === index;
-              return (
-                <div key={index} className={styles.faqAccordionItem}>
-                  <button
-                    type="button"
-                    className={styles.faqQuestionBtn}
-                    onClick={() => setFaqActiveIndex(isOpen ? null : index)}
-                    aria-expanded={isOpen}
-                  >
-                    <span className={styles.faqQuestionText}>{faq.question}</span>
-                    <div className={styles.faqChevronCircle}>
-                      <ChevronDown className={styles.faqChevronSvg} size={16} />
+            {/* Left: Gradient CTA card */}
+            <div className={styles.faqCtaCard}>
+              <div>
+                <h3 className={styles.faqCtaTitle}>Ready to turn ideas into revenue?</h3>
+                <p className={styles.faqCtaDesc}>Turn your content into sellable digital products in minutes.</p>
+                <Link href="/signup" className={styles.faqCtaButton}>Get Started Today</Link>
+              </div>
+
+              <div className={styles.faqCtaStat}>
+                <span className={styles.faqCtaStatNumber}>2,500+</span>
+                <span className={styles.faqCtaStatLabel}>creators already earning with StudioFlow</span>
+              </div>
+            </div>
+
+            {/* Right: Header + Accordion */}
+            <div className={styles.faqRightCol}>
+              <div className={styles.faqHeaderCol}>
+                <h2 className={styles.faqTitle}>
+                  Frequently asked <span className={styles.faqTitleAccent}>questions</span>
+                </h2>
+                <p className={styles.faqDesc}>
+                  Have questions about StudioFlow? Learn how our AI-powered creator workspace helps you turn ideas into platform-ready posts and monetized digital products.
+                </p>
+              </div>
+
+              <div className={styles.faqAccordionContainer}>
+                {faqs.map((faq, index) => {
+                  const isOpen = faqActiveIndex === index;
+                  return (
+                    <div key={index} className={styles.faqAccordionItem}>
+                      <button
+                        type="button"
+                        className={styles.faqQuestionBtn}
+                        onClick={() => setFaqActiveIndex(isOpen ? null : index)}
+                        aria-expanded={isOpen}
+                      >
+                        <span className={styles.faqQuestionText}>{faq.question}</span>
+                        <div className={styles.faqChevronCircle}>
+                          <ChevronDown className={styles.faqChevronSvg} size={16} />
+                        </div>
+                      </button>
+
+                      <div className={styles.faqAnswerWrapper}>
+                        <div className={styles.faqAnswerText}>
+                          {faq.answer}
+                        </div>
+                      </div>
                     </div>
-                  </button>
+                  );
+                })}
+              </div>
+            </div>
 
-                  <div className={styles.faqAnswerWrapper}>
-                    <div className={styles.faqAnswerText}>
-                      {faq.answer}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
           </div>
-
         </div>
       </section>
 
@@ -1213,7 +1344,7 @@ export default function MarketingPage() {
           
           <div className={styles.footerGrid}>
             
-            {/* Column 1: Brand Logo & Title + Socials */}
+            {/* Column 1: Brand Logo & Tagline */}
             <div className={styles.footerLogoCol}>
               <div className={styles.footerBrand}>
                 <div className={styles.footerLogoIcon}>
@@ -1226,69 +1357,54 @@ export default function MarketingPage() {
                 </div>
                 <span className={styles.footerBrandName}>StudioFlow</span>
               </div>
-              
-              {/* Social Media Links */}
-              <div className={styles.footerSocials}>
-                <a href="#" className={styles.footerSocialIcon} aria-label="Twitter/X">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                  </svg>
-                </a>
-                <a href="#" className={styles.footerSocialIcon} aria-label="LinkedIn">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
-                  </svg>
-                </a>
-                <a href="#" className={styles.footerSocialIcon} aria-label="Instagram">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
-                  </svg>
-                </a>
-              </div>
+
+              <p className={styles.footerTagline}>
+                Turning creator content into sellable digital products, powered by AI.
+              </p>
             </div>
 
-            {/* Column 2: Navigation Links 1 */}
+            {/* Column 2: Navigation */}
             <div className={styles.footerNavCol}>
-              <Link href="/" className={styles.footerLink}>Home</Link>
+              <h3 className={styles.footerColHeading}>Navigation</h3>
               <Link href="/#how-it-works" className={styles.footerLink}>How It Works</Link>
               <Link href="/#features" className={styles.footerLink}>Features</Link>
+              <Link href="/#testimonials" className={styles.footerLink}>Testimonials</Link>
               <Link href="/#pricing" className={styles.footerLink}>Pricing</Link>
+            </div>
+
+            {/* Column 3: Pages */}
+            <div className={styles.footerNavCol}>
+              <h3 className={styles.footerColHeading}>Pages</h3>
+              <Link href="/" className={styles.footerLink}>Home</Link>
+              <Link href="/dashboard" className={styles.footerLink}>Dashboard</Link>
+              <Link href="/terms" className={styles.footerLink}>Terms of Service</Link>
               <Link href="/privacy" className={styles.footerLink}>Privacy Policy</Link>
             </div>
 
-            {/* Column 3: Navigation Links 2 */}
-            <div className={styles.footerNavCol}>
-              <Link href="/dashboard" className={styles.footerLink}>Idea Architect</Link>
-              <Link href="/dashboard" className={styles.footerLink}>Content Crafter</Link>
-              <Link href="/dashboard" className={styles.footerLink}>Product Generator</Link>
-              <Link href="/terms" className={styles.footerLink}>Terms of Service</Link>
-              <span className={styles.footerLinkDummy}>GDPR Compliant</span>
-            </div>
-
-            {/* Column 4: Contact & Info with Pink Circle Icons */}
-            <div className={styles.footerContactCol}>
-              
-              <div className={styles.footerContactItem}>
-                <div className={styles.footerContactCircle}>
-                  <MapPin size={14} />
-                </div>
-                <span className={styles.footerContactText}>Antigravity Workspace, Chennai</span>
-              </div>
-
-              <div className={styles.footerContactItem}>
-                <div className={styles.footerContactCircle}>
-                  <Phone size={14} />
-                </div>
-                <span className={styles.footerContactText}>+91 0123456789</span>
-              </div>
-
-              <div className={styles.footerContactItem}>
-                <div className={styles.footerContactCircle}>
-                  <Mail size={14} />
-                </div>
-                <span className={styles.footerContactText}>support@studioflow.ai</span>
-              </div>
-
+            {/* Column 4: Newsletter */}
+            <div className={styles.footerNewsletterCol}>
+              <h3 className={styles.footerColHeading}>Newsletter</h3>
+              <p className={styles.footerNewsletterText}>
+                Join our newsletter and get notified about product updates.
+              </p>
+              <form
+                className={styles.footerNewsletterForm}
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  setNewsletterSubscribed(true);
+                }}
+              >
+                <input
+                  type="email"
+                  required
+                  placeholder="Enter your email..."
+                  className={styles.footerNewsletterInput}
+                  disabled={newsletterSubscribed}
+                />
+                <button type="submit" className={styles.footerNewsletterButton} disabled={newsletterSubscribed}>
+                  {newsletterSubscribed ? 'Subscribed' : 'Subscribe'}
+                </button>
+              </form>
             </div>
 
           </div>
@@ -1296,10 +1412,10 @@ export default function MarketingPage() {
           {/* Compliance disclaimers row */}
           <div className={styles.footerComplianceRow}>
             <p className={styles.footerComplianceText}>
-              Generated by StudioFlow AI. You own this content (non-exclusive). GDPR: Access, export, or delete your data anytime.
+              &copy; 2026 StudioFlow. All rights reserved.
             </p>
             <p className={styles.footerComplianceText}>
-              &copy; 2026 StudioFlow. All Rights Reserved.
+              Everything you create with StudioFlow is yours to keep, sell, or share (non-exclusive license). Your data, your rules — access, export, or delete it anytime.
             </p>
           </div>
 

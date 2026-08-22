@@ -389,16 +389,14 @@
 .sidebarBrand {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 4px;
   padding: 0 8px;
   margin-bottom: 24px;
 }
 
 .sidebarLogo {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  background: var(--color-primary);
+  width: 20px;
+  height: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -429,6 +427,7 @@
   text-decoration: none;
   font-size: 14px;
   font-weight: 500;
+  line-height: normal;
   transition: all 0.2s ease;
   border: none;
   background: none;
@@ -715,7 +714,7 @@
 .welcomeTitle {
   font-family: var(--typography-display-small-font-family);
   font-size: var(--typography-display-small-font-size);
-  font-weight: var(--typography-display-small-font-weight);
+  font-weight: 400;
   letter-spacing: var(--typography-display-small-letter-spacing);
   line-height: 40px;
   color: var(--color-on-surface);
@@ -744,7 +743,7 @@
 .welcomeCard {
   display: inline-flex;
   align-items: center;
-  padding: 5px 14px;
+  padding: 1px 14px;
   border-radius: 100px;
   cursor: pointer;
   transition: background 0.2s ease;
@@ -760,7 +759,7 @@
 }
 
 .welcomeCardTitle {
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 600;
   white-space: nowrap;
   color: #1a1a1a;
@@ -836,7 +835,7 @@
 .commandBarInline {
   width: 100%;
   margin-top: 6px;
-  border: 1.5px solid var(--color-outline);
+  border: 1.2px solid var(--color-outline);
   border-radius: 100px;
 }
 
@@ -851,7 +850,7 @@
 }
 
 .commandBarBordered {
-  border: 1.5px solid var(--color-outline);
+  border: 1.2px solid var(--color-outline);
   border-radius: 100px;
 }
 
