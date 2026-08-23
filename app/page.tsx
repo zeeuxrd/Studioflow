@@ -106,15 +106,15 @@ export default function MarketingPage() {
       const x = rect.left + rect.width / 2 - containerRect.left;
       const y = rect.top + rect.height / 2 - containerRect.top;
       return new Promise<void>((resolve) => {
-        gsap.to(dashboardPreviewRef.current, { scale: 1.035, duration: 0.5, ease: 'power2.out' });
+        gsap.to(dashboardPreviewRef.current, { scale: 1.025, duration: 0.25, ease: 'power2.out' });
         gsap.to(demoCursorRef.current, {
           left: x,
           top: y,
           opacity: 1,
-          duration: 0.9,
+          duration: 0.45,
           ease: 'power2.inOut',
           onComplete: () => {
-            gsap.to(dashboardPreviewRef.current, { scale: 1.015, duration: 0.5, ease: 'power2.inOut' });
+            gsap.to(dashboardPreviewRef.current, { scale: 1.01, duration: 0.25, ease: 'power2.inOut' });
             resolve();
           },
         });
@@ -124,14 +124,14 @@ export default function MarketingPage() {
     const clickPulse = () => {
       return new Promise<void>((resolve) => {
         const tl = gsap.timeline({ onComplete: () => resolve() });
-        tl.to(demoCursorRef.current, { scale: 0.7, duration: 0.12 }, 0)
-          .to(dashboardPreviewRef.current, { scale: 1.05, duration: 0.15, ease: 'power2.out' }, 0)
-          .to(demoCursorRef.current, { scale: 1, duration: 0.2 }, 0.12)
-          .to(dashboardPreviewRef.current, { scale: 1, duration: 0.6, ease: 'power2.inOut' }, 0.3);
+        tl.to(demoCursorRef.current, { scale: 0.75, duration: 0.08 }, 0)
+          .to(dashboardPreviewRef.current, { scale: 1.03, duration: 0.1, ease: 'power2.out' }, 0)
+          .to(demoCursorRef.current, { scale: 1, duration: 0.12 }, 0.08)
+          .to(dashboardPreviewRef.current, { scale: 1, duration: 0.3, ease: 'power2.inOut' }, 0.2);
       });
     };
 
-    const typeText = async (text: string, setter: (v: string) => void, delay = 35) => {
+    const typeText = async (text: string, setter: (v: string) => void, delay = 14) => {
       for (let i = 0; i <= text.length; i++) {
         if (cancelled) return;
         setter(text.slice(0, i));
@@ -143,7 +143,7 @@ export default function MarketingPage() {
 
     const runDemo = async () => {
       if (demoCursorRef.current) gsap.set(demoCursorRef.current, { opacity: 0 });
-      await sleep(1500);
+      await sleep(200);
 
       while (!cancelled) {
         setDemoInputText('');
@@ -157,15 +157,15 @@ export default function MarketingPage() {
         setDemoGenerating(false);
         setDemoPost('');
 
-        await sleep(1000);
+        await sleep(200);
         if (cancelled) break;
 
         await moveCursorTo(demoInputRowRef.current);
         if (cancelled) break;
         await clickPulse();
-        await typeText(DEMO_NICHE, setDemoInputText);
+        await typeText(DEMO_NICHE, setDemoInputText, 14);
         if (cancelled) break;
-        await sleep(500);
+        await sleep(200);
 
         await moveCursorTo(demoSendBtnRef.current);
         if (cancelled) break;
@@ -174,26 +174,26 @@ export default function MarketingPage() {
         setDemoChatOpen(true);
         setDemoUserMsg(DEMO_NICHE);
         setDemoInputText('');
-        await sleep(600);
+        await sleep(250);
         if (cancelled) break;
 
         setDemoAiTyping(true);
-        await sleep(1400);
+        await sleep(600);
         if (cancelled) break;
 
         setDemoAiTyping(false);
-        await typeText(DEMO_AI_REPLY, setDemoAiReply, 18);
+        await typeText(DEMO_AI_REPLY, setDemoAiReply, 10);
         if (cancelled) break;
-        await sleep(300);
+        await sleep(150);
 
         for (const idea of DEMO_IDEAS) {
           if (cancelled) break;
           setDemoIdeas((prev) => [...prev, idea]);
-          await sleep(350);
+          await sleep(180);
         }
         if (cancelled) break;
 
-        await sleep(1000);
+        await sleep(400);
         if (cancelled) break;
 
         const ideaCard = dashboardPreviewRef.current?.querySelector<HTMLElement>(`.${styles.dpIdeaCard}`);
@@ -201,22 +201,22 @@ export default function MarketingPage() {
         if (cancelled) break;
         await clickPulse();
         setDemoSelectedIdea(0);
-        await sleep(500);
+        await sleep(200);
         if (cancelled) break;
 
         setDemoUserPick(`I'll go with this one: "${DEMO_IDEAS[0]}"`);
-        await sleep(800);
+        await sleep(350);
         if (cancelled) break;
 
         setDemoGenerating(true);
-        await sleep(1400);
+        await sleep(600);
         if (cancelled) break;
 
         setDemoGenerating(false);
-        await typeText(DEMO_POST, setDemoPost, 16);
+        await typeText(DEMO_POST, setDemoPost, 10);
         if (cancelled) break;
 
-        await sleep(6500);
+        await sleep(3500);
       }
     };
 
@@ -759,6 +759,15 @@ export default function MarketingPage() {
   return (
     <div className={styles.page}>
       <div className={styles.headerHeroContainer}>
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className={styles.heroVideoBackground}
+        >
+          <source src="/images/assets/hero-video.mp4" type="video/mp4" />
+        </video>
         {/* ——— NAV ——— */}
         <header className={styles.nav}>
           <div className={styles.logoContainer}>
@@ -919,7 +928,7 @@ export default function MarketingPage() {
       {/* ——— HOW IT WORKS ——— */}
       <section className={styles.howItWorks} id="how-it-works">
         <div className={styles.hiwHeaderContainer} ref={hiwHeaderRef}>
-          <h2 className={styles.hiwTitle}>From idea to <span className={styles.hiwTitleAccent}>digital product</span></h2>
+          <h2 className={styles.hiwTitle}>From idea to<br /><span className={styles.hiwTitleAccent}>digital product</span></h2>
           <p className={styles.hiwSubtitle}>
             Package your insights into revenue-generating assets in minutes.
           </p>

@@ -2,9 +2,10 @@
   background-color: #f9f9f9;
   flex-direction: column;
   min-height: 100vh;
-  padding: 2rem 4rem 0;
+  padding: 0;
   display: flex;
-  overflow-x: hidden
+  overflow-x: hidden;
+  width: 100%;
 }
 
 .nav {
@@ -13,7 +14,9 @@
   margin: 0 auto;
   width: 100%;
   max-width: 1100px;
-  display: grid
+  display: grid;
+  position: relative;
+  z-index: 1;
 }
 
 .navLinks {
@@ -146,14 +149,23 @@
   flex-direction: column;
   flex: 1;
   min-height: 100vh;
-  margin-top: -2rem;
-  margin-left: -4rem;
-  margin-right: -4rem;
-  padding-top: 2rem;
-  padding-left: 4rem;
-  padding-right: 4rem;
-  padding-bottom: 5rem;
+  margin: 0;
+  padding: 2rem 4rem 5rem;
+  width: 100%;
   display: flex;
+  position: relative;
+  overflow: hidden;
+}
+
+.heroVideoBackground {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+  pointer-events: none;
 }
 
 .hero {
@@ -163,7 +175,9 @@
   align-items: center;
   width: 100%;
   padding-bottom: 4rem;
-  display: flex
+  display: flex;
+  position: relative;
+  z-index: 1;
 }
 
 .heroContent {
@@ -876,12 +890,10 @@
 
 .howItWorks {
   background-color: #F9F9F9;
-  width: 100vw;
-  margin-top: 0;
-  margin-left: calc(50% - 50vw);
-  margin-right: calc(50% - 50vw);
-  padding: 100px 4rem 120px;
-  display: block
+  width: 100%;
+  margin: 0;
+  padding: 6rem 4rem 120px;
+  display: block;
 }
 
 .hiwEyebrow {
@@ -1275,22 +1287,21 @@
 }
 
 .features {
-  background-color: #F9F9F9;
-  width: 100vw;
-  margin-left: calc(50% - 50vw);
-  margin-right: calc(50% - 50vw);
-  padding: 40px 0 6rem;
+  background-color: #0b192c;
+  width: 100%;
+  margin: 0 0 6rem 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .featuresSky {
   background-image: url('/images/assets/features-bg.jpg');
   background-size: cover;
   background-position: center;
-  width: 100vw;
-  margin-left: calc(50% - 50vw);
-  margin-right: calc(50% - 50vw);
+  width: 100%;
+  margin: 0;
   padding: 5rem 4rem 110px;
   display: flex;
   flex-direction: column;
@@ -1578,9 +1589,8 @@
 
 .faqMockupSection {
   background-color: #0E0F10;
-  width: 100vw;
-  margin-left: calc(50% - 50vw);
-  margin-right: calc(50% - 50vw);
+  width: 100%;
+  margin: 0;
   padding: 100px 4rem 6rem;
   display: flex;
   justify-content: center;
@@ -1855,7 +1865,8 @@
   }
 
   .features {
-    margin: 0 auto 4rem
+    width: 100%;
+    margin: 0 0 4.5rem 0;
   }
 
   .howItWorks {
@@ -1880,20 +1891,29 @@
     margin-top: 0;
   }
 
+  .featuresSky {
+    padding: 3rem 1rem 6rem;
+    width: 100%;
+  }
+
   .featuresHeader {
     flex-direction: column;
     align-items: center;
     gap: 1.5rem;
-    margin-bottom: 2.5rem
+    margin-bottom: 2.5rem;
+    width: 100%;
   }
 
   .featuresGrid {
     grid-template-columns: 1fr;
-    gap: 2rem
+    gap: 1.5rem;
+    width: 100%;
   }
 
   .featuresCard {
-    max-width: 100%
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
   }
 
   .featuresCardTilted {
@@ -2691,16 +2711,14 @@
 /* Footer Mockup Styles */
 .footerMockupSection {
   background-color: var(--color-palette-primary-90);
-  width: 100vw;
-  margin-left: calc(50% - 50vw);
-  margin-right: calc(50% - 50vw);
+  width: 100%;
+  margin: 0;
   padding: clamp(3rem, 6vw, 7.2rem) clamp(1rem, 4vw, 4rem) 0 clamp(1rem, 4vw, 4rem);
   display: flex;
   flex-direction: column;
   align-items: center;
   position: relative;
   box-sizing: border-box;
-  opacity: 0;
 }
 
 .footerGrid {
@@ -2946,7 +2964,8 @@
 
 @media (max-width: 900px) {
   .page {
-    padding: 1rem
+    padding: 0;
+    width: 100%;
   }
 
   .navCta {
@@ -3006,13 +3025,9 @@
 
   .headerHeroContainer {
     min-height: 100vh;
-    padding-bottom: 2.4rem;
-    margin-top: -1rem;
-    margin-left: -1rem;
-    margin-right: -1rem;
-    padding-top: 1rem;
-    padding-left: 1rem;
-    padding-right: 1rem;
+    padding: 1rem 1rem 2.4rem;
+    margin: 0;
+    width: 100%;
   }
 
   .headlineText {
@@ -3036,11 +3051,19 @@
     display: none
   }
 
+  .heroCtaRow {
+    margin-bottom: 32px;
+  }
+
   .dashboardPreviewGlow {
     width: 876px;
     max-width: none;
     zoom: calc((100vw - 2rem) / 876px);
-    margin: 24px auto 0;
+    margin: 0 auto;
+  }
+
+  .dashboardPreview {
+    height: 749px;
   }
 
   .dpSidebar {
@@ -3082,10 +3105,9 @@
   }
 
   .howItWorks {
-    width: 100vw;
-    margin-left: calc(50% - 50vw);
-    margin-right: calc(50% - 50vw);
-    padding: 3rem 1rem 6rem;
+    width: 100%;
+    margin: 0;
+    padding: 4.5rem 1rem 6rem;
     display: block;
     overflow: hidden;
   }
@@ -3101,7 +3123,13 @@
   }
 
   .features {
-    margin: 0 auto 4rem
+    width: 100%;
+    margin: 0 0 4.5rem 0;
+  }
+
+  .featuresSky {
+    padding: 3rem 1rem 6rem;
+    width: 100%;
   }
 
   .featuresTopRow {
@@ -3113,17 +3141,21 @@
 
   .featuresHeader {
     margin-bottom: 2rem;
+    width: 100%;
   }
 
   .featuresGrid {
     grid-template-columns: 1fr;
-    gap: 1.5rem
+    gap: 1.5rem;
+    width: 100%;
   }
 
   .featuresCard {
+    width: 100%;
     max-width: 100%;
     min-height: auto;
-    padding: 2rem 1rem;
+    padding: 2rem 1.5rem;
+    box-sizing: border-box;
   }
 
   .featuresGrid>div:nth-child(1),
@@ -3139,9 +3171,8 @@
   }
 
   .faqMockupSection {
-    width: 100vw;
-    margin-left: calc(50% - 50vw);
-    margin-right: calc(50% - 50vw);
+    width: 100%;
+    margin: 0;
     padding: 0 1rem 6rem;
     box-sizing: border-box;
   }
@@ -3159,6 +3190,10 @@
   .faqTitle {
     font-size: 28px;
     margin: 1rem 0 0.8rem 0;
+  }
+
+  .faqCtaTitle {
+    font-size: 32px;
   }
 
   .faqDesc {
@@ -3271,6 +3306,41 @@
     text-align: left;
   }
 
+  .footerNewsletterCol {
+    grid-column: 1 / -1;
+    width: 100%;
+    margin-top: 0.5rem;
+  }
+
+  .footerNewsletterText {
+    margin-bottom: 0.5rem;
+    font-size: 14px;
+    line-height: 1.55;
+  }
+
+  .footerNewsletterForm {
+    display: flex;
+    flex-direction: row;
+    gap: 0.75rem;
+    width: 100%;
+    max-width: 480px;
+    margin-top: 0.5rem;
+  }
+
+  .footerNewsletterInput {
+    flex: 1;
+    min-width: 0;
+    padding: 0.75rem 1rem;
+    font-size: 14px;
+    border-radius: 10px;
+  }
+
+  .footerNewsletterButton {
+    padding: 0.75rem 1.25rem;
+    font-size: 14px;
+    border-radius: 10px;
+  }
+
   .footerContactCol {
     display: none;
   }
@@ -3303,6 +3373,19 @@
     letter-spacing: -2px;
     margin-top: 2rem;
     margin-bottom: 0;
+  }
+}
+
+@media (max-width: 520px) {
+  .footerNewsletterForm {
+    flex-direction: column;
+    align-items: stretch;
+    max-width: 100%;
+  }
+
+  .footerNewsletterButton {
+    width: 100%;
+    text-align: center;
   }
 }
 
