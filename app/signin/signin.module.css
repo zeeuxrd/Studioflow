@@ -114,28 +114,33 @@
 
 .submitBtn {
   width: 100%;
-  background-color: var(--color-primary);
-  color: var(--color-palette-primary-96);
-  border: none;
+  background-color: #e8e8e8;
+  color: #777777;
+  border: 1px solid #dcdcdc;
   border-radius: 15px;
   padding: 14px;
   font-size: 14px;
   font-weight: var(--typography-title-medium-font-weight);
-  cursor: pointer;
-  transition: all 0.2s ease;
+  cursor: default;
+  transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
-.submitBtn:hover:not(:disabled) {
-  background-color: color-mix(in srgb, var(--color-on-primary) 8%, var(--color-primary));
+.submitBtn:hover:not(.submitBtnActive) {
+  background-color: #e0e0e0;
 }
 
-.submitBtn:disabled {
-  background-color: color-mix(in srgb, var(--color-on-surface) 12%, transparent);
-  color: color-mix(in srgb, var(--color-on-surface) 38%, transparent);
-  cursor: not-allowed;
+.submitBtnActive {
+  background-color: var(--color-primary) !important;
+  color: #ffffff !important;
+  border-color: var(--color-primary) !important;
+  cursor: pointer !important;
+}
+
+.submitBtnActive:hover {
+  background-color: color-mix(in srgb, var(--color-on-primary) 8%, var(--color-primary)) !important;
 }
 
 .errorContainer {

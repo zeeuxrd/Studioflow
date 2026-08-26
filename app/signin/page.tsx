@@ -98,7 +98,7 @@ export default function SignInPage() {
             />
             {passwordError && <p className={styles.fieldError}>{passwordError}</p>}
           </div>
-          <button type="submit" className={styles.submitBtn} disabled={isLoading}>
+          <button type="submit" className={`${styles.submitBtn} ${email.trim() && password.trim() ? styles.submitBtnActive : ''}`} disabled={isLoading}>
             {isLoading ? "Signing in..." : "Next"}
           </button>
         </form>

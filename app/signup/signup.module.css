@@ -89,32 +89,18 @@
   color: color-mix(in srgb, #1a1a1a 50%, transparent);
 }
 
-.submitBtn {
-  width: 100%;
-  background-color: var(--color-primary);
-  color: var(--color-palette-primary-96);
-  border: none;
-  padding: 14px;
-  font-size: 14px;
-  font-weight: var(--typography-title-medium-font-weight);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
+.submitBtn,
 .arrowBtn {
   width: 100%;
-  background-color: var(--color-primary);
-  color: var(--color-palette-primary-96);
-  border: none;
+  background-color: #e8e8e8;
+  color: #777777;
+  border: 1px solid #dcdcdc;
   border-radius: 15px;
   padding: 14px;
   font-size: 14px;
   font-weight: var(--typography-title-medium-font-weight);
-  cursor: pointer;
-  transition: all 0.2s ease;
+  cursor: default;
+  transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -126,18 +112,22 @@
   justify-content: space-between;
 }
 
-.arrowBtn:hover {
-  background-color: color-mix(in srgb, var(--color-on-primary) 8%, var(--color-primary));
+.submitBtn:hover:not(.submitBtnActive),
+.arrowBtn:hover:not(.arrowBtnActive) {
+  background-color: #e0e0e0;
 }
 
-.submitBtn:hover:not(:disabled) {
-  background-color: color-mix(in srgb, var(--color-on-primary) 8%, var(--color-primary));
+.submitBtnActive,
+.arrowBtnActive {
+  background-color: var(--color-primary) !important;
+  color: #ffffff !important;
+  border-color: var(--color-primary) !important;
+  cursor: pointer !important;
 }
 
-.submitBtn:disabled {
-  background-color: color-mix(in srgb, var(--color-on-surface) 12%, transparent);
-  color: color-mix(in srgb, var(--color-on-surface) 38%, transparent);
-  cursor: not-allowed;
+.submitBtnActive:hover,
+.arrowBtnActive:hover {
+  background-color: color-mix(in srgb, var(--color-on-primary) 8%, var(--color-primary)) !important;
 }
 
 .error {

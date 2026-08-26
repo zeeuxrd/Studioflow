@@ -32,20 +32,20 @@ export default function UsageBadge() {
     <div style={{
       padding: '10px 16px',
       margin: '0 12px 12px',
-      background: 'var(--color-palette-primary-87)',
+      background: 'var(--color-primary-container)',
       borderRadius: 10,
       fontSize: 12,
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-        <span style={{ color: 'var(--color-on-background)', fontWeight: 600, opacity: 0.7 }}>{data.plan}</span>
-        <span style={{ color: 'var(--color-on-background)', opacity: 0.5 }}>
+        <span style={{ color: 'var(--color-on-primary-container)', fontWeight: 700 }}>{data.plan}</span>
+        <span style={{ color: 'var(--color-on-primary-container)', opacity: 0.8, fontWeight: 600 }}>
           {data.used}{data.limit !== null ? ` / ${data.limit}` : ''}
         </span>
       </div>
       {data.limit !== null && (
         <div style={{
           height: 4,
-          background: 'color-mix(in srgb, var(--color-on-surface) 12%, transparent)',
+          background: 'color-mix(in srgb, var(--color-on-primary-container) 20%, transparent)',
           borderRadius: 2,
           overflow: 'hidden',
         }}>

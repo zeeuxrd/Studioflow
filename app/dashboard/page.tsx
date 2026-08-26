@@ -117,6 +117,15 @@ function DashboardContent() {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
+  const handleNewChat = () => {
+    setIdeas([]);
+    setNiche('');
+    setActiveIdeaId(null);
+    setPosts({});
+    setProducts({});
+    setError(null);
+  };
+
   const inputRef = useRef<HTMLInputElement>(null);
   const [theme, setTheme] = useState<"light" | "dark">("light");
 
@@ -585,17 +594,31 @@ function DashboardContent() {
       <div className={styles.topBar}>
         <span className={styles.pageTitle}>Idea Architect</span>
         <div className={styles.topActions}>
+          <div className={styles.desktopActions}>
+            <button className={`${styles.topBarBtn} ${styles.upgradeBtn}`} onClick={() => router.push('/#pricing')} title="Upgrade to Pro">
+              <Sparkles size={16} />
+              <span>Upgrade</span>
+            </button>
+            <button className={styles.topBarBtn} onClick={() => alert("StudioFlow Help: Enter a niche or topic in the prompt input to generate content ideas, then convert ideas to posts and digital products!")} title="Help">
+              <HelpCircle size={16} />
+              <span>Help</span>
+            </button>
+            <button className={styles.topBarBtn} onClick={toggleTheme} title={theme === "light" ? "Switch to Dark Mode" : "Switch to Light Mode"}>
+              {theme === "light" ? <Moon size={16} /> : <Sun size={16} />}
+            </button>
+          </div>
+
           <div className={styles.threeDotMenu} ref={menuRef}>
             <button className={styles.topActionIcon} onClick={() => setMenuOpen(!menuOpen)} title="Menu">
               <MoreVertical size={18} strokeWidth={1} />
             </button>
             {menuOpen && (
               <div className={styles.threeDotDropdown}>
-                <button className={styles.threeDotItem} onClick={() => { setMenuOpen(false); /* help action */ }}>
-                  <HelpCircle size={16} /> Help
+                <button className={styles.threeDotItem} onClick={() => { setMenuOpen(false); router.push('/#pricing'); }}>
+                  <Sparkles size={16} /> Upgrade
                 </button>
-                <button className={styles.threeDotItem} onClick={() => { setMenuOpen(false); /* new chat */ }}>
-                  <MessageSquarePlus size={16} /> New Chat
+                <button className={styles.threeDotItem} onClick={() => { setMenuOpen(false); alert("StudioFlow Help: Enter a niche or topic in the prompt input to generate content ideas, then convert ideas to posts and digital products!"); }}>
+                  <HelpCircle size={16} /> Help
                 </button>
                 <button className={styles.threeDotItem} onClick={() => { setMenuOpen(false); toggleTheme(); }}>
                   {theme === "light" ? <Moon size={16} /> : <Sun size={16} />} {theme === "light" ? "Dark" : "Light"} Mode
@@ -614,25 +637,6 @@ function DashboardContent() {
 
             {/* Inline input bar inside welcome container */}
             {renderCommandInput(false)}
-
-            <div className={styles.welcomeGrid}>
-              {[
-                { label: "AI for Beginners", color: styles.cardPurple },
-                { label: "Productivity Hacks", color: styles.cardOrange },
-                { label: "Health & Wellness", color: styles.cardGreen },
-                { label: "Digital Marketing", color: styles.cardBlue },
-              ].map((suggestion) => (
-                <div 
-                  key={suggestion.label}
-                  className={`${styles.welcomeCard} ${suggestion.color}`}
-                  onClick={() => { setNiche(suggestion.label); handleGenerate(suggestion.label); }}
-                >
-                  <div className={styles.welcomeCardLeft}>
-                    <span className={styles.welcomeCardTitle}>{suggestion.label}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
         )}
 

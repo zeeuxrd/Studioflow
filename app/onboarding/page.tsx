@@ -121,7 +121,7 @@ export default function OnboardingPage() {
                 />
                 {nicheError && <p className={styles.fieldError}>{nicheError}</p>}
               </div>
-              <button type="submit" className={styles.arrowBtn}>Next</button>
+              <button type="submit" className={`${styles.arrowBtn} ${niche.trim() ? styles.arrowBtnActive : ''}`}>Next</button>
             </form>
           </>
         )}
@@ -161,7 +161,7 @@ export default function OnboardingPage() {
                   ))}
                 </div>
               </div>
-              <button type="submit" className={styles.arrowBtn}>Next</button>
+              <button type="submit" className={`${styles.arrowBtn} ${tone && platform ? styles.arrowBtnActive : ''}`}>Next</button>
               <button type="button" className={styles.backBtn} onClick={() => setStep(1)}>&larr; Back</button>
             </form>
           </>
@@ -185,7 +185,7 @@ export default function OnboardingPage() {
                 ))}
               </div>
               {error && <p className={styles.error}>{error}</p>}
-              <button type="submit" className={styles.arrowBtn} disabled={isLoading}>
+              <button type="submit" className={`${styles.arrowBtn} ${goal ? styles.arrowBtnActive : ''}`} disabled={isLoading}>
                 {isLoading ? "Setting up..." : "Get Started"}
               </button>
               <button type="button" className={styles.backBtn} onClick={() => setStep(2)}>&larr; Back</button>

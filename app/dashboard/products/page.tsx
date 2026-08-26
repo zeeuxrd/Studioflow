@@ -146,12 +146,13 @@ export default function ProductsPage() {
   };
 
   const renderSortIndicator = (field: SortField) => {
+    const iconStyle = { display: "inline-flex", alignItems: "center", verticalAlign: "middle" };
     if (sortField !== field) {
-      return <ArrowUpDown size={14} style={{ opacity: 0.4 }} />;
+      return <ArrowUpDown size={14} style={{ opacity: 0.4, ...iconStyle }} />;
     }
     return sortOrder === "asc" 
-      ? <ArrowUp size={14} style={{ color: "var(--color-primary)" }} /> 
-      : <ArrowDown size={14} style={{ color: "var(--color-primary)" }} />;
+      ? <ArrowUp size={14} style={{ color: "var(--color-primary)", ...iconStyle }} /> 
+      : <ArrowDown size={14} style={{ color: "var(--color-primary)", ...iconStyle }} />;
   };
 
   const getProductIcon = (type: string) => {
@@ -240,20 +241,21 @@ export default function ProductsPage() {
       </header>
 
       {/* Filter pills & view toggle bar */}
-      <div className={styles.librarySubHeader}>
-        <div className={styles.libraryViewToggles} style={{ marginLeft: "auto" }}>
-          {/* Quick sort toggle */}
-          <button 
-            className={styles.librarySortBtn}
-            onClick={() => handleSort("price")}
-            title={`Sort by Price: ${sortField === "price" && sortOrder === "asc" ? "Ascending" : "Descending"}`}
-          >
-            <span>Price</span>
-            {renderSortIndicator("price")}
-          </button>
-
+      {products.length > 0 && (
+        <div className={styles.librarySubHeader}>
+          <div className={styles.libraryViewToggles} style={{ marginLeft: "auto" }}>
+            {/* Quick sort toggle */}
+            <button 
+              className={styles.librarySortBtn}
+              onClick={() => handleSort("price")}
+              title={`Sort by Price: ${sortField === "price" && sortOrder === "asc" ? "Ascending" : "Descending"}`}
+            >
+              <span>Price</span>
+              {renderSortIndicator("price")}
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Bulk action bar */}
       {selectedIds.size > 0 && (
@@ -308,13 +310,13 @@ export default function ProductsPage() {
                     <p className={styles.libraryGridCardTitle} title={product.title}>
                       {product.title}
                     </p>
-                    <p style={{ fontSize: "12px", color: "var(--color-on-surface-variant)", opacity: 0.7, margin: "4px 0", lineHeight: 0.96 }}>
+                    <p className={styles.libraryGridCardDesc}>
                       Source: {product.source_post?.platform_type} Post
                     </p>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "40px" }}>
-                        <span style={{ fontSize: "16px", fontWeight: "700", color: "var(--color-on-surface)" }}>
-                          &#8358;{(product.monetization_price_suggestion / 100).toLocaleString()}
-                        </span>
+                    <div className={styles.libraryGridCardPriceRow}>
+                      <span className={styles.libraryGridCardPrice}>
+                        <span className={styles.currencySymbol}>&#8358;</span>{(product.monetization_price_suggestion / 100).toLocaleString()}
+                      </span>
                         {product.status === "published" ? (
                           <Link
                             href={`/products/${product.product_id}`}

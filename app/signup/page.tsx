@@ -167,7 +167,7 @@ export default function SignUpPage() {
               />
               {nameError && <p className={styles.fieldError}>{nameError}</p>}
             </div>
-            <button type="submit" className={styles.arrowBtn}>Next</button>
+            <button type="submit" className={`${styles.arrowBtn} ${name.trim() ? styles.arrowBtnActive : ''}`}>Next</button>
           </form>
 
           </>
@@ -202,7 +202,7 @@ export default function SignUpPage() {
               {emailFormatError && <p className={styles.fieldError}>Enter a valid email address</p>}
               {emailError && <p className={styles.fieldError}>{emailError}</p>}
             </div>
-            <button type="submit" className={styles.arrowBtn}>Next</button>
+            <button type="submit" className={`${styles.arrowBtn} ${email.trim() && !emailFormatError ? styles.arrowBtnActive : ''}`}>Next</button>
             <button type="button" className={styles.backBtn} onClick={() => { setStep(1); setError(""); }}><ArrowLeft size={14} /> Back</button>
           </form>
           </>
@@ -281,7 +281,7 @@ export default function SignUpPage() {
               {confirmPasswordError && <p className={styles.fieldError}>{confirmPasswordError}</p>}
             </div>
             {error && <p className={styles.error}>{error}</p>}
-            <button type="submit" className={styles.arrowBtn} disabled={isLoading}>
+            <button type="submit" className={`${styles.arrowBtn} ${password.trim() && confirmPassword.trim() ? styles.arrowBtnActive : ''}`} disabled={isLoading}>
               {isLoading ? "Creating my account..." : "Create my account"}
             </button>
             <button type="button" className={styles.backBtn} onClick={() => { setStep(2); setError(""); }}><ArrowLeft size={14} /> Back</button>
