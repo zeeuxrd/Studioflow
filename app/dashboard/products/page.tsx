@@ -14,7 +14,8 @@ import {
   Rocket,
   FileText,
   Plus,
-  Trash2
+  Trash2,
+  X
 } from "lucide-react";
 import styles from "../dashboard.module.css";
 
@@ -213,8 +214,8 @@ export default function ProductsPage() {
       {/* Header matching Content Library */}
       <header className={styles.libraryHeader}>
         <div className={styles.libraryTitleSec}>
-          <h1 className={styles.libraryTitle} style={{ margin: 0, lineHeight: 1.68 }}>Products</h1>
-          <p className={styles.librarySubtitle} style={{ lineHeight: 0.84 }}>Your published digital products</p>
+          <h1 className={styles.libraryTitle} style={{ margin: 0, lineHeight: 1.2, marginBottom: 2 }}>Products</h1>
+          <p className={styles.librarySubtitle} style={{ margin: 0 }}>Your published digital products</p>
         </div>
 
         <div className={styles.libraryControls}>
@@ -257,20 +258,29 @@ export default function ProductsPage() {
         </div>
       )}
 
-      {/* Bulk action bar */}
-      {selectedIds.size > 0 && (
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 16px", background: "var(--color-surface)", border: "1px solid var(--color-outline-variant)", borderRadius: "8px", marginBottom: "12px" }}>
-          <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--color-on-surface)" }}>
-            {selectedIds.size} selected
-          </span>
-          <button
-            className={styles.secondaryBtn}
-            style={{ padding: "6px 16px", fontSize: "13px", color: "var(--color-error)" }}
-            onClick={() => setShowDeleteModal(true)}
-          >
-            <Trash2 size={14} />
-            <span>Delete</span>
-          </button>
+      {/* Sleek Floating Bottom Bulk Bar for Multiple Selections */}
+      {selectedIds.size > 1 && (
+        <div className={styles.floatingBulkBar}>
+          <div className={styles.floatingBulkInfo}>
+            <span className={styles.floatingBulkBadge}>{selectedIds.size}</span>
+            <span>selected</span>
+          </div>
+          <div className={styles.floatingBulkActions}>
+            <button
+              className={styles.floatingDeleteBtn}
+              onClick={() => setShowDeleteModal(true)}
+            >
+              <Trash2 size={15} />
+              <span>Delete</span>
+            </button>
+            <button
+              className={styles.floatingCancelBtn}
+              onClick={() => setSelectedIds(new Set())}
+              title="Clear selection"
+            >
+              <X size={15} />
+            </button>
+          </div>
         </div>
       )}
 
@@ -347,7 +357,21 @@ export default function ProductsPage() {
                   </div>
 
                   <div className={styles.libraryGridCardFooter} style={{ borderTop: "none", paddingTop: 0 }}>
-                    {product.status === "draft" ? (
+                    {isSelected && selectedIds.size === 1 && (
+                      <div style={{ marginTop: "12px", width: "100%" }}>
+                        <button
+                          className={styles.singleCardDeleteBtn}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowDeleteModal(true);
+                          }}
+                        >
+                          <Trash2 size={14} />
+                          <span>Delete Product</span>
+                        </button>
+                      </div>
+                    )}
+                    {product.status === "draft" && !(isSelected && selectedIds.size === 1) ? (
                       <button
                         className={styles.libraryNewBtn}
                         style={{ width: "100%", justifyContent: "center", marginTop: "16px" }}

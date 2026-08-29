@@ -304,14 +304,22 @@
 @media (max-width: 900px) {
   .splitLayout {
     flex-direction: column;
-  gap: 10px;
+    gap: 16px;
+    width: 100%;
   }
   
   .leftCol {
     width: 100%;
+    min-width: 100%;
+  }
+
+  .rightCol {
+    width: 100%;
+    min-width: 100%;
   }
 
   .metricsGrid {
     grid-template-columns: 1fr;
+    width: 100%;
   }
 }

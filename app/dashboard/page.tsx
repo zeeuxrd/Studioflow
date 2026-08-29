@@ -96,17 +96,29 @@ function DashboardContent() {
   useEffect(() => {
     if (searchParams.get('subscription') !== 'success') return;
     setSubVerifying(true);
+    let attempts = 0;
 
-    const check = () => fetch('/api/subscriptions/status')
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.status === 'active' && data.plan !== 'free') {
-          setSubSuccess(true);
-          setSubVerifying(false);
-          window.history.replaceState({}, '', '/dashboard');
-        }
-      })
-      .catch(() => {});
+    const check = () => {
+      attempts++;
+      fetch('/api/subscriptions/status')
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.status === 'active' && data.plan !== 'free') {
+            setSubSuccess(true);
+            setSubVerifying(false);
+            window.history.replaceState({}, '', '/dashboard');
+          } else if (attempts >= 5) {
+            setSubVerifying(false);
+            window.history.replaceState({}, '', '/dashboard');
+          }
+        })
+        .catch(() => {
+          if (attempts >= 5) {
+            setSubVerifying(false);
+            window.history.replaceState({}, '', '/dashboard');
+          }
+        });
+    };
 
     const interval = setInterval(check, 2000);
     check();
@@ -128,6 +140,7 @@ function DashboardContent() {
 
   const inputRef = useRef<HTMLInputElement>(null);
   const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [isDockedBottom, setIsDockedBottom] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem("studioflow-theme") as "light" | "dark" | null;
@@ -183,6 +196,7 @@ function DashboardContent() {
       setIdeas([parentIdea]);
       setNiche(parentIdea.niche);
       setActiveIdeaId(parentIdea.idea_id);
+      setIsDockedBottom(true);
 
       if (chat.post_id) {
         // Show the post immediately from chat data
@@ -240,6 +254,7 @@ function DashboardContent() {
       setActiveIdeaId(null);
       setActivePostId(null);
       setError(null);
+      setIsDockedBottom(false);
     };
 
     window.addEventListener("select-idea", handleSelectIdea);
@@ -274,6 +289,7 @@ function DashboardContent() {
     if (!activeNiche.trim() || !userId) return;
     
     console.log("Generating ideas for niche:", activeNiche);
+    setIsDockedBottom(true);
     setIsGenerating(true);
     setError(null);
     setIdeas([]);
@@ -563,7 +579,17 @@ function DashboardContent() {
                 }} />
                 <style>{`@keyframes subSpin { to { transform: rotate(360deg) } }`}</style>
                 <p style={{ fontWeight: 700, color: 'var(--color-on-surface)', margin: '0 0 4px' }}>Verifying subscription...</p>
-                <p style={{ fontSize: 13, color: 'var(--color-on-surface-variant)', margin: 0 }}>Please wait while we confirm your payment</p>
+                <p style={{ fontSize: 13, color: 'var(--color-on-surface-variant)', margin: '0 0 18px' }}>Please wait while we confirm your payment</p>
+                <button
+                  onClick={() => {
+                    setSubVerifying(false);
+                    window.history.replaceState({}, '', '/dashboard');
+                  }}
+                  className={styles.secondaryBtn}
+                  style={{ height: 38, fontSize: 13 }}
+                >
+                  Cancel Verification
+                </button>
               </>
             )}
             {subSuccess && (
@@ -590,53 +616,29 @@ function DashboardContent() {
         </div>
       )}
 
-      {/* Top Bar matching mockup */}
-      <div className={styles.topBar}>
-        <span className={styles.pageTitle}>Idea Architect</span>
-        <div className={styles.topActions}>
-          <div className={styles.desktopActions}>
-            <button className={`${styles.topBarBtn} ${styles.upgradeBtn}`} onClick={() => router.push('/#pricing')} title="Upgrade to Pro">
-              <Sparkles size={16} />
-              <span>Upgrade</span>
-            </button>
-            <button className={styles.topBarBtn} onClick={() => alert("StudioFlow Help: Enter a niche or topic in the prompt input to generate content ideas, then convert ideas to posts and digital products!")} title="Help">
-              <HelpCircle size={16} />
-              <span>Help</span>
-            </button>
-            <button className={styles.topBarBtn} onClick={toggleTheme} title={theme === "light" ? "Switch to Dark Mode" : "Switch to Light Mode"}>
-              {theme === "light" ? <Moon size={16} /> : <Sun size={16} />}
-            </button>
-          </div>
-
-          <div className={styles.threeDotMenu} ref={menuRef}>
-            <button className={styles.topActionIcon} onClick={() => setMenuOpen(!menuOpen)} title="Menu">
-              <MoreVertical size={18} strokeWidth={1} />
-            </button>
-            {menuOpen && (
-              <div className={styles.threeDotDropdown}>
-                <button className={styles.threeDotItem} onClick={() => { setMenuOpen(false); router.push('/#pricing'); }}>
-                  <Sparkles size={16} /> Upgrade
-                </button>
-                <button className={styles.threeDotItem} onClick={() => { setMenuOpen(false); alert("StudioFlow Help: Enter a niche or topic in the prompt input to generate content ideas, then convert ideas to posts and digital products!"); }}>
-                  <HelpCircle size={16} /> Help
-                </button>
-                <button className={styles.threeDotItem} onClick={() => { setMenuOpen(false); toggleTheme(); }}>
-                  {theme === "light" ? <Moon size={16} /> : <Sun size={16} />} {theme === "light" ? "Dark" : "Light"} Mode
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
       <div className={styles.canvasBody}>
-        {/* Welcome Dashboard when no ideas generated */}
-        {ideas.length === 0 && !isGenerating && (
+        {/* Welcome Dashboard when no ideas generated & not docked */}
+        {ideas.length === 0 && !isGenerating && !isDockedBottom && (
           <div className={styles.welcomeContainer}>
-            <h1 className={styles.welcomeTitle}>{greeting ?? `${firstName}, where should we begin?`}</h1>
+            <h1 className={styles.welcomeTitle}>
+              <span className={styles.desktopGreeting}>{greeting ?? `${firstName}, where should we begin?`}</span>
+              <span className={styles.mobileGreeting}>Let's jump in, {firstName}</span>
+            </h1>
 
             {/* Inline input bar inside welcome container */}
             {renderCommandInput(false)}
+          </div>
+        )}
+
+        {/* Welcome title when docked at bottom before ideas generate */}
+        {ideas.length === 0 && !isGenerating && isDockedBottom && (
+          <div className={styles.welcomeContainer} style={{ marginBottom: "auto" }}>
+            <h1 className={styles.welcomeTitle}>
+              <span className={styles.desktopGreeting}>{greeting ?? `${firstName}, where should we begin?`}</span>
+              <span className={styles.mobileGreeting}>Let's jump in, {firstName}</span>
+            </h1>
+          </div>
+        )}
           </div>
         )}
 
@@ -648,31 +650,46 @@ function DashboardContent() {
           </div>
         )}
 
-        {/* Error Display */}
+        {/* Rate Limit / Error Modal Overlay */}
         {error && (
-          <div style={{
-            background: 'rgba(255, 107, 107, 0.1)',
-            border: '1px solid rgba(255, 107, 107, 0.3)',
-            borderRadius: 12,
-            padding: '16px 20px',
-            margin: '20px 0',
-          }}>
-            <p style={{ color: '#ff6b6b', fontWeight: 600, margin: 0 }}>{error}</p>
-            {error.includes('generation') && error.includes('limit') && (
-              <a href="/#pricing" style={{
-                display: 'inline-block',
-                marginTop: 12,
-                background: '#a88aed',
-                color: '#fff',
-                padding: '10px 24px',
-                borderRadius: 8,
-                textDecoration: 'none',
-                fontWeight: 600,
-                fontSize: 14,
+          <div className={styles.modalOverlay} onClick={() => setError(null)}>
+            <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
+              <div style={{
+                width: 48,
+                height: 48,
+                borderRadius: "50%",
+                background: "color-mix(in srgb, var(--color-error) 15%, transparent)",
+                color: "var(--color-error)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                margin: "0 auto 16px"
               }}>
-                Upgrade Plan
-              </a>
-            )}
+                <Zap size={24} />
+              </div>
+              <h2 className={styles.modalTitle}>Limit Reached</h2>
+              <p className={styles.modalText} style={{ margin: "8px 0 20px" }}>{error}</p>
+              <div className={styles.modalActions}>
+                <button
+                  className={styles.primaryBtn}
+                  onClick={() => {
+                    setError(null);
+                    fetch('/api/subscriptions/checkout', { method: 'POST' })
+                      .then(r => r.json())
+                      .then(d => { if (d?.url) window.location.href = d.url; })
+                      .catch(() => {});
+                  }}
+                >
+                  Upgrade Plan
+                </button>
+                <button
+                  className={styles.secondaryBtn}
+                  onClick={() => setError(null)}
+                >
+                  Got it
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
@@ -699,10 +716,10 @@ function DashboardContent() {
             ))}
           </div>
         )}
-
-        {/* Sticky bottom input ONLY when ideas are active */}
-        {ideas.length > 0 && !isGenerating && renderCommandInput(true)}
       </div>
+
+      {/* Sticky bottom input when docked OR when ideas are active - stretches 100% to screen edges */}
+      {(isDockedBottom || ideas.length > 0) && !isGenerating && renderCommandInput(true)}
 
       {showPublishModal && (
         <div className={styles.modalOverlay} onClick={() => { setShowPublishModal(false); setPublishedProductId(null); }}>

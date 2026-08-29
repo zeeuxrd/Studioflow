@@ -19,12 +19,12 @@
 
 .title {
   font-family: var(--typography-display-small-font-family);
-  font-size: var(--typography-display-small-font-size);
+  font-size: 48px;
   font-weight: var(--typography-display-small-font-weight);
   letter-spacing: var(--typography-display-small-letter-spacing);
   color: #1a1a1a;
   margin-bottom: 8px;
-  line-height: 40px;
+  line-height: 56px;
 }
 
 .subtitle {
@@ -37,7 +37,7 @@
 .form {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 8px;
 }
 
 .inputGroup {
@@ -242,11 +242,21 @@
   gap: 6px;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 900px) {
   .container {
-    padding: 40px 16px;
+    padding: 52px 16px 32px;
+    justify-content: flex-start;
   }
   .card {
     padding: 0;
+    margin-top: 0;
+  }
+  .title {
+    font-size: 32px;
+    line-height: 40px;
+    margin-bottom: 4px;
+  }
+  .subtitle {
+    margin-bottom: 24px;
   }
 }

@@ -100,7 +100,25 @@ export default function OnboardingPage() {
   return (
     <div className={styles.container}>
       <div className={styles.card}>
-        <p className={styles.stepIndicator}>Step {step}/3</p>
+        <div className={styles.progressContainer}>
+          <div className={styles.progressHeader}>
+            <span className={styles.stepIndicator}>Step {step} of 3</span>
+            <span className={styles.stepPercent}>{Math.round((step / 3) * 100)}%</span>
+          </div>
+          <div
+            className={styles.progressTrack}
+            role="progressbar"
+            aria-valuenow={step}
+            aria-valuemin={1}
+            aria-valuemax={3}
+            aria-label={`Onboarding stage ${step} of 3`}
+          >
+            <div
+              className={styles.progressFill}
+              style={{ width: `${(step / 3) * 100}%` }}
+            />
+          </div>
+        </div>
 
         {step === 1 && (
           <>

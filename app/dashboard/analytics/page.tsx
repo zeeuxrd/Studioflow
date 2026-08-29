@@ -193,8 +193,9 @@ export default function AnalyticsPage() {
   if (status === "loading" || loading) {
     return (
       <div className={dashStyles.libraryWrapper}>
-        <div style={{ color: "var(--color-on-surface-variant)", padding: "2rem", textAlign: "center" }}>
-          Loading Revenue Data...
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", paddingTop: "160px", paddingBottom: "40px", gap: "12px", color: "var(--color-on-surface-variant)", textAlign: "center" }}>
+          <div className={dashStyles.spinner} />
+          <span style={{ fontSize: "14px", fontWeight: 500, opacity: 0.8 }}>Loading Revenue Data...</span>
         </div>
       </div>
     );
@@ -217,8 +218,11 @@ export default function AnalyticsPage() {
       {/* Redesigned Header with actions matching reference */}
       <header className={dashStyles.libraryHeader}>
         <div className={dashStyles.libraryTitleSec}>
-          <h1 className={dashStyles.libraryTitle} style={{ margin: 0, lineHeight: 1.68 }}>Revenue & Analytics</h1>
-          <p className={dashStyles.librarySubtitle} style={{ lineHeight: 0.84 }}>Monitor your digital product sales, creations, and creator metrics</p>
+          <h1 className={dashStyles.libraryTitle} style={{ margin: 0, lineHeight: 1.2, marginBottom: 2 }}>Revenue & Analytics</h1>
+          <p className={dashStyles.librarySubtitle} style={{ margin: 0 }}>
+            <span className={dashStyles.desktopSubtitle}>Monitor your digital product sales, creations, and creator metrics</span>
+            <span className={dashStyles.mobileSubtitle}>Track sales & metrics</span>
+          </p>
         </div>
 
         <div className={dashStyles.libraryControls}>
@@ -239,7 +243,7 @@ export default function AnalyticsPage() {
             <button
               className={dashStyles.libraryTab}
               onClick={() => setShowTimeDropdown(!showTimeDropdown)}
-              style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 16px", borderRadius: "100px", width: "130px" }}
+              style={{ display: "flex", alignItems: "center", gap: "6px", padding: "14px 18px", borderRadius: "100px", minWidth: "140px", boxSizing: "border-box" }}
             >
               <Calendar size={14} style={{ opacity: 0.7 }} />
               <span style={{ flex: 1, textAlign: "left", fontSize: "14px" }}>{timeRange}</span>
@@ -346,63 +350,98 @@ export default function AnalyticsPage() {
           </div>
 
           <div style={{ border: "1px solid color-mix(in srgb, var(--color-outline-variant) 60%, transparent)", borderRadius: "0 0 10px 10px", background: "var(--color-background)", overflow: "hidden" }}>
-            <table className={dashStyles.libraryTable}>
-              <thead>
-                <tr>
-                  <th className={dashStyles.libraryTh}>ID</th>
-                  <th className={dashStyles.libraryTh}>Product Title</th>
-                  <th className={dashStyles.libraryTh} onClick={() => handleSort("date")} style={{ cursor: "pointer" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                      Date {renderSortIndicator("date")}
-                    </div>
-                  </th>
-                  <th className={dashStyles.libraryTh}>Type</th>
-                  <th className={dashStyles.libraryTh}>Status</th>
-                  <th className={dashStyles.libraryTh} onClick={() => handleSort("price")} style={{ cursor: "pointer", textAlign: "right" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px", justifyContent: "flex-end" }}>
-                      Revenue {renderSortIndicator("price")}
-                    </div>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {sortedEvents.length === 0 ? (
+            {/* Desktop Table View */}
+            <div className={dashStyles.tableDesktopWrap}>
+              <table className={dashStyles.libraryTable}>
+                <thead>
                   <tr>
-                    <td colSpan={6} style={{ textAlign: "center", padding: "32px", color: "var(--color-on-surface-variant)", opacity: 0.7 }}>
-                      No conversion events match your criteria.
-                    </td>
+                    <th className={dashStyles.libraryTh}>ID</th>
+                    <th className={dashStyles.libraryTh}>Product Title</th>
+                    <th className={dashStyles.libraryTh} onClick={() => handleSort("date")} style={{ cursor: "pointer" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                        Date {renderSortIndicator("date")}
+                      </div>
+                    </th>
+                    <th className={dashStyles.libraryTh}>Type</th>
+                    <th className={dashStyles.libraryTh}>Status</th>
+                    <th className={dashStyles.libraryTh} onClick={() => handleSort("price")} style={{ cursor: "pointer", textAlign: "right" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px", justifyContent: "flex-end" }}>
+                        Revenue {renderSortIndicator("price")}
+                      </div>
+                    </th>
                   </tr>
-                ) : (
-                  sortedEvents.map((evt) => {
-                    const isPurchase = evt.conversion_type === "purchase";
-                    return (
-                      <tr key={evt.tracking_id} className={dashStyles.libraryRow}>
-                        <td className={dashStyles.libraryTd} style={{ fontWeight: "700" }}>
-                          #{evt.tracking_id.slice(0, 8)}
-                        </td>
-                        <td className={evt.content_id ? dashStyles.libraryTd : `${dashStyles.libraryTd} styles.libraryTdEmpty`} style={{ maxWidth: "200px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                          {productMap[evt.content_id] || "Digital Product"}
-                        </td>
-                        <td className={dashStyles.libraryTd}>
-                          {formatDate(evt.created_at)}
-                        </td>
-                        <td className={dashStyles.libraryTd} style={{ textTransform: "capitalize" }}>
-                          {isPurchase ? "Sale" : "Publication"}
-                        </td>
-                        <td className={dashStyles.libraryTd}>
-                          <span className={isPurchase ? styles.statusCompleted : styles.statusPublished}>
-                            {isPurchase ? "Completed" : "Published"}
-                          </span>
-                        </td>
-                        <td className={dashStyles.libraryTd} style={{ textAlign: "right", color: isPurchase ? "var(--color-primary)" : "inherit" }}>
+                </thead>
+                <tbody>
+                  {sortedEvents.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} style={{ textAlign: "center", padding: "32px 16px", fontSize: "12px", color: "var(--color-on-surface-variant)", opacity: 0.7 }}>
+                        No conversion events match your criteria.
+                      </td>
+                    </tr>
+                  ) : (
+                    sortedEvents.map((evt) => {
+                      const isPurchase = evt.conversion_type === "purchase";
+                      return (
+                        <tr key={evt.tracking_id} className={dashStyles.libraryRow}>
+                          <td className={dashStyles.libraryTd} style={{ fontWeight: "700" }}>
+                            #{evt.tracking_id.slice(0, 8)}
+                          </td>
+                          <td className={evt.content_id ? dashStyles.libraryTd : `${dashStyles.libraryTd} styles.libraryTdEmpty`} style={{ maxWidth: "200px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                            {productMap[evt.content_id] || "Digital Product"}
+                          </td>
+                          <td className={dashStyles.libraryTd}>
+                            {formatDate(evt.created_at)}
+                          </td>
+                          <td className={dashStyles.libraryTd} style={{ textTransform: "capitalize" }}>
+                            {isPurchase ? "Sale" : "Publication"}
+                          </td>
+                          <td className={dashStyles.libraryTd}>
+                            <span className={isPurchase ? styles.statusCompleted : styles.statusPublished}>
+                              {isPurchase ? "Completed" : "Published"}
+                            </span>
+                          </td>
+                          <td className={dashStyles.libraryTd} style={{ textAlign: "right", color: isPurchase ? "var(--color-primary)" : "inherit" }}>
+                            &#8358;{(evt.revenue_estimate / 100).toFixed(2)}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Cards View */}
+            <div className={dashStyles.tableMobileCards}>
+              {sortedEvents.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "32px 16px", fontSize: "12px", color: "var(--color-on-surface-variant)", opacity: 0.7 }}>
+                  No conversion events match your criteria.
+                </div>
+              ) : (
+                sortedEvents.map((evt) => {
+                  const isPurchase = evt.conversion_type === "purchase";
+                  return (
+                    <div key={evt.tracking_id} className={dashStyles.mobileConversionCard}>
+                      <div className={dashStyles.mobileConversionCardTop}>
+                        <span className={dashStyles.mobileConversionId}>#{evt.tracking_id.slice(0, 8)}</span>
+                        <span className={isPurchase ? styles.statusCompleted : styles.statusPublished}>
+                          {isPurchase ? "Completed" : "Published"}
+                        </span>
+                      </div>
+                      <h4 className={dashStyles.mobileConversionTitle}>
+                        {productMap[evt.content_id] || "Digital Product"}
+                      </h4>
+                      <div className={dashStyles.mobileConversionMeta}>
+                        <span>{isPurchase ? "Sale" : "Publication"} • {formatDate(evt.created_at)}</span>
+                        <span className={dashStyles.mobileConversionPrice}>
                           &#8358;{(evt.revenue_estimate / 100).toFixed(2)}
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
           </div>
 
         </div>
