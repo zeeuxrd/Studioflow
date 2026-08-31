@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import type { Idea, Post, Product } from "@/components/dashboard/types";
 import IdeaCard from "@/components/dashboard/IdeaCard";
+import PostResult from "@/components/dashboard/PostResult";
 import styles from './dashboard.module.css';
 
 export default function DashboardPage() {
@@ -40,24 +41,44 @@ function DashboardContent() {
   const THOUGHTFUL_QUESTIONS = [
     (name: string) => `${name}, where should we begin?`,
     (name: string) => `What's on your mind today, ${name}?`,
-    () => "What story are you ready to tell?",
-    (name: string) => `What would you like to create today, ${name}?`,
-    () => "What's the idea you've been sitting on?",
-    () => "Ready to turn a thought into something real?",
-    () => "What's worth writing about today?",
+    (name: string) => `What are we creating today, ${name}?`,
+    (name: string) => `Ready to create, ${name}?`,
   ];
-  const GREETING_STORAGE_KEY = "sf-dashboard-greeting";
+  const GREETING_STORAGE_KEY = "sf-dashboard-greeting-v2";
   const GREETING_STALE_MS = 6 * 60 * 60 * 1000; // refresh after 6h away, or a new login
 
   const [greeting, setGreeting] = useState<string | null>(null);
 
   const [niche, setNiche] = useState('');
-  const [formatStyle, setFormatStyle] = useState<'all' | 'how-to' | 'controversial' | 'listicle' | 'story'>('all');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [styleMenuOpen, setStyleMenuOpen] = useState(false);
   
+  interface ChatTurn {
+    id: string;
+    userPrompt: string;
+    timestamp: number;
+    intent: 'ideas' | 'post' | 'product' | 'refinement';
+    ideas?: Idea[];
+    post?: Post;
+    product?: Product;
+    platform?: string;
+    isLoading?: boolean;
+    error?: string | null;
+  }
+
+  const [turns, setTurns] = useState<ChatTurn[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [error, setError] = useState<string | null>(null);
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .slice(0, 2)
+      .join('')
+      .toUpperCase();
+  };
 
   const [activeIdeaId, setActiveIdeaId] = useState<string | null>(null);
   const [isCrafting, setIsCrafting] = useState(false);
@@ -193,6 +214,11 @@ function DashboardContent() {
         created_at: chat.idea?.created_at || new Date().toISOString()
       };
 
+      const promptText = chat.idea?.idea_text || chat.content_body || chat.idea?.niche || "";
+      if (promptText) {
+        setTurns([{ id: `turn_${Date.now()}`, prompt: promptText, timestamp: Date.now(), type: 'initial' }]);
+      }
+
       setIdeas([parentIdea]);
       setNiche(parentIdea.niche);
       setActiveIdeaId(parentIdea.idea_id);
@@ -247,6 +273,7 @@ function DashboardContent() {
     };
 
     const handleNewChat = () => {
+      setTurns([]);
       setIdeas([]);
       setNiche('');
       setPosts({});
@@ -284,64 +311,63 @@ function DashboardContent() {
     return <div style={{ color: "var(--color-on-surface-variant)", padding: "2rem", textAlign: "center" }}>Loading...</div>;
   }
 
-  const handleGenerate = async (nicheOverride?: string) => {
-    const activeNiche = nicheOverride ?? niche;
-    if (!activeNiche.trim() || !userId) return;
-    
-    console.log("Generating ideas for niche:", activeNiche);
-    setIsDockedBottom(true);
-    setIsGenerating(true);
-    setError(null);
-    setIdeas([]);
-    setPosts({});
-    setActiveIdeaId(null);
+  const handleGeneratePost = async (topicText: string, platform: string = "LinkedIn", customPromptText?: string) => {
+    if (!topicText.trim() || !userId) return;
 
-    try {
-      const res = await fetch('/api/agent/idea-architect', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ niche: activeNiche, format_style: formatStyle })
-      });
-      
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || 'Failed to generate ideas');
-      
-      const generatedIdeas = data.output.ideas || [];
-      setIdeas(generatedIdeas);
-      if (generatedIdeas.length > 0) {
-        setActiveIdeaId(generatedIdeas[0].idea_id);
+    const displayPrompt = customPromptText || topicText;
+    const turnId = `turn_${Date.now()}`;
+    setTurns(prev => [
+      ...prev,
+      {
+        id: turnId,
+        userPrompt: displayPrompt,
+        timestamp: Date.now(),
+        intent: 'post',
+        platform,
+        isLoading: true
       }
-      // Dispatch refresh event to update recent ideas list in layout
-      window.dispatchEvent(new Event("refresh-ideas"));
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  const handleCraftPost = async (ideaId: string, platform: string) => {
+    ]);
+    setNiche('');
+    setIsDockedBottom(true);
     setIsCrafting(true);
+
     try {
       const res = await fetch('/api/agent/content-crafter', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idea_id: ideaId, platform_type: platform, format_style: formatStyle })
+        body: JSON.stringify({ niche: topicText, platform_type: platform, format_style: selectedCategory })
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || 'Failed to craft post');
-      
-      setPosts(prev => ({ ...prev, [ideaId]: data.output }));
+      if (!res.ok) throw new Error(data?.error || 'Failed to generate post');
+
+      setPosts(prev => ({ ...prev, [data.output.post_id || turnId]: data.output }));
+      setTurns(prev => prev.map(t => t.id === turnId ? { ...t, isLoading: false, post: data.output } : t));
       window.dispatchEvent(new Event("refresh-ideas"));
     } catch (err: any) {
-      alert("Error crafting post: " + err.message);
+      setTurns(prev => prev.map(t => t.id === turnId ? { ...t, isLoading: false, error: err.message } : t));
     } finally {
       setIsCrafting(false);
     }
   };
 
-  const handleProductize = async (postId: string, productType: string) => {
+  const handleProductize = async (postId: string, productType: string = "ebook", customPrompt?: string) => {
+    const promptText = customPrompt || `Turn this post into a digital ${productType} product outline`;
+
+    const turnId = `turn_${Date.now()}`;
+    setTurns(prev => [
+      ...prev,
+      {
+        id: turnId,
+        userPrompt: promptText,
+        timestamp: Date.now(),
+        intent: 'product',
+        isLoading: true
+      }
+    ]);
+    setNiche('');
+    setIsDockedBottom(true);
     setIsProductizing(postId);
+
     try {
       const res = await fetch('/api/agent/product-alchemist', {
         method: 'POST',
@@ -350,12 +376,12 @@ function DashboardContent() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || 'Failed to create product');
-      
+
       setProducts(prev => ({ ...prev, [postId]: data.output }));
-      setActivePostId(null);
+      setTurns(prev => prev.map(t => t.id === turnId ? { ...t, isLoading: false, product: data.output } : t));
       window.dispatchEvent(new Event("refresh-ideas"));
     } catch (err: any) {
-      alert("Error creating product: " + err.message);
+      setTurns(prev => prev.map(t => t.id === turnId ? { ...t, isLoading: false, error: err.message } : t));
     } finally {
       setIsProductizing(null);
     }
@@ -382,81 +408,24 @@ function DashboardContent() {
     }
   };
 
-  const handleRefinePost = async (postId: string, prompt: string, styleOverride?: string) => {
-    setIsCrafting(true);
-    const activeStyle = styleOverride ?? formatStyle;
-    try {
-      const res = await fetch('/api/agent/content-crafter', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          post_id: postId, 
-          refinement_prompt: prompt,
-          format_style: activeStyle 
-        })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || 'Failed to refine post');
-      
-      const updatedPost = data.output;
-      setPosts(prev => {
-        const next = { ...prev };
-        const ideaId = Object.keys(next).find(k => next[k].post_id === postId);
-        if (ideaId) {
-          next[ideaId] = updatedPost;
-        }
-        return next;
-      });
-      setNiche('');
-    } catch (err: any) {
-      alert("Error refining post: " + err.message);
-    } finally {
-      setIsCrafting(false);
-    }
-  };
-
-  const handleRefineProduct = async (productId: string, prompt: string) => {
-    const productItem = Object.values(products).find(p => p.product_id === productId);
-    if (!productItem) return;
-    const postId = productItem.source_post_id;
-    
-    setIsProductizing(postId);
-    try {
-      const res = await fetch('/api/agent/product-alchemist', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ product_id: productId, refinement_prompt: prompt })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || 'Failed to refine product');
-      
-      const updatedProduct = data.output;
-      setProducts(prev => ({
-        ...prev,
-        [postId]: updatedProduct
-      }));
-      setNiche('');
-    } catch (err: any) {
-      alert("Error refining product: " + err.message);
-    } finally {
-      setIsProductizing(null);
-    }
-  };
-
   const handleSubmitMessage = () => {
     const prompt = niche.trim();
     if (!prompt) return;
 
-    const activeIdea = ideas.find(i => i.idea_id === activeIdeaId);
-    const activePost = activeIdea ? posts[activeIdea.idea_id] : null;
-    const activeProduct = activePost ? products[activePost.post_id] : null;
+    const lower = prompt.toLowerCase();
+    const isProductReq = lower.includes("ebook") || lower.includes("product") || lower.includes("lead magnet") || lower.includes("checklist") || lower.includes("course");
 
-    if (activeIdeaId && activePost && activeProduct) {
-      handleRefineProduct(activeProduct.product_id, prompt);
-    } else if (activeIdeaId && activePost) {
-      handleRefinePost(activePost.post_id, prompt);
+    const latestPost = Object.values(posts).reverse()[0];
+
+    if (isProductReq && (latestPost || activePostId)) {
+      const targetPostId = latestPost?.post_id || activePostId || "latest";
+      handleProductize(targetPostId, "ebook", prompt);
     } else {
-      handleGenerate(prompt);
+      let platform = "LinkedIn";
+      if (lower.includes("x") || lower.includes("twitter") || lower.includes("thread")) platform = "X";
+      if (lower.includes("instagram") || lower.includes("ig")) platform = "Instagram";
+      if (lower.includes("tiktok")) platform = "TikTok";
+      handleGeneratePost(prompt, platform);
     }
   };
 
@@ -467,93 +436,54 @@ function DashboardContent() {
     inputRef.current?.focus();
   };
 
+  const CATEGORY_OPTIONS = [
+    { id: 'all', label: '✨ All' },
+    { id: 'Actionable Tip', label: '💡 Actionable Tip' },
+    { id: 'Step-by-Step Guide', label: '📝 Guide' },
+    { id: 'Key Insight', label: '🧠 Insight' },
+    { id: 'Story', label: '📖 Story' },
+    { id: 'Hot Take', label: '🔥 Hot Take' }
+  ];
+
   const renderCommandInput = (isSticky: boolean) => {
     return (
       <div className={isSticky ? styles.commandBarSticky : styles.commandBarInline}>
         <div className={isSticky ? styles.commandBarBordered : ""}>
           <div className={styles.commandInputRow}>
-            <input
-              ref={isSticky ? null : inputRef}
-              type="text"
-              className={styles.commandInput}
-              placeholder={
-                activeIdeaId && posts[activeIdeaId] && products[posts[activeIdeaId].post_id]
-                  ? "Refine product outline..."
-                  : activeIdeaId && posts[activeIdeaId]
-                  ? "Refine content post..."
-                  : ideas.length > 0
-                  ? "Refine ideas or suggest a topic..."
-                  : "Type a topic or niche..."
-              }
-              value={niche}
-              onChange={(e) => setNiche(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && niche.trim() && !isGenerating && !isCrafting && !isProductizing) {
-                  handleSubmitMessage();
+              <input
+                ref={isSticky ? null : inputRef}
+                type="text"
+                className={styles.commandInput}
+                placeholder={
+                  activeIdeaId && posts[activeIdeaId] && products[posts[activeIdeaId].post_id]
+                    ? "Refine product outline..."
+                    : activeIdeaId && posts[activeIdeaId]
+                    ? "Refine content post..."
+                    : ideas.length > 0
+                    ? "Refine ideas or suggest a topic..."
+                    : "Type a topic or niche..."
                 }
-              }}
-            />
-            <div className={styles.commandInputRight}>
-              {!isSticky && (
-                <div className={styles.customDropdownWrapper}>
-                  <button
-                    type="button"
-                    className={styles.styleSelect}
-                    onClick={() => setStyleMenuOpen(!styleMenuOpen)}
-                    title="Select Format Style"
-                    disabled={isGenerating || isCrafting || !!isProductizing}
-                  >
-                    <span>
-                      {formatStyle === "all" ? "Select Style" : formatStyle.charAt(0).toUpperCase() + formatStyle.slice(1)}
-                    </span>
-                  </button>
-
-                  {styleMenuOpen && (
-                    <div className={styles.customDropdownMenu}>
-                      {[
-                        { value: "all", label: "Select Style" },
-                        { value: "how-to", label: "How-To" },
-                        { value: "controversial", label: "Controversial" },
-                        { value: "listicle", label: "Listicle" },
-                        { value: "story", label: "Story" }
-                      ].map((option) => (
-                        <button
-                          key={option.value}
-                          type="button"
-                          className={`${styles.customDropdownItem} ${formatStyle === option.value ? styles.customDropdownItemActive : ""}`}
-                          onClick={() => {
-                            const newStyle = option.value as any;
-                            setFormatStyle(newStyle);
-                            setStyleMenuOpen(false);
-                            
-                            // Auto-rewrite the active post when changing the format style dropdown
-                            const activeIdea = ideas.find(i => i.idea_id === activeIdeaId);
-                            const activePost = activeIdea ? posts[activeIdea.idea_id] : null;
-                            if (activeIdeaId && activePost && !products[activePost.post_id]) {
-                              handleRefinePost(activePost.post_id, "", newStyle);
-                            }
-                          }}
-                        >
-                          {option.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              <button
-                className={styles.sendBtn}
-                onClick={handleSubmitMessage}
-                disabled={!niche.trim() || isGenerating || isCrafting || !!isProductizing}
-                title="Send Prompt"
-              >
-                <Send size={16} />
-              </button>
+                value={niche}
+                onChange={(e) => setNiche(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && niche.trim() && !isGenerating && !isCrafting && !isProductizing) {
+                    handleSubmitMessage();
+                  }
+                }}
+              />
+              <div className={styles.commandInputRight}>
+                <button
+                  className={styles.sendBtn}
+                  onClick={handleSubmitMessage}
+                  disabled={!niche.trim() || isGenerating || isCrafting || !!isProductizing}
+                  title="Send Prompt"
+                >
+                  <Send size={16} />
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
     );
   };
 
@@ -617,8 +547,8 @@ function DashboardContent() {
       )}
 
       <div className={styles.canvasBody}>
-        {/* Welcome Dashboard when no ideas generated & not docked */}
-        {ideas.length === 0 && !isGenerating && !isDockedBottom && (
+        {/* Welcome Dashboard when no turns & no ideas generated & not docked */}
+        {turns.length === 0 && ideas.length === 0 && !isGenerating && !isDockedBottom && (
           <div className={styles.welcomeContainer}>
             <h1 className={styles.welcomeTitle}>
               <span className={styles.desktopGreeting}>{greeting ?? `${firstName}, where should we begin?`}</span>
@@ -630,8 +560,8 @@ function DashboardContent() {
           </div>
         )}
 
-        {/* Welcome title when docked at bottom before ideas generate */}
-        {ideas.length === 0 && !isGenerating && isDockedBottom && (
+        {/* Welcome title when docked at bottom before turns generate */}
+        {turns.length === 0 && ideas.length === 0 && !isGenerating && isDockedBottom && (
           <div className={styles.welcomeContainer} style={{ marginBottom: "auto" }}>
             <h1 className={styles.welcomeTitle}>
               <span className={styles.desktopGreeting}>{greeting ?? `${firstName}, where should we begin?`}</span>
@@ -639,17 +569,6 @@ function DashboardContent() {
             </h1>
           </div>
         )}
-          </div>
-        )}
-
-        {/* Loading Spinner */}
-        {isGenerating && (
-          <div className={styles.loader}>
-            <div className={styles.spinner}></div>
-            <p className={styles.loadingText}>StudioFlow is architecting your ideas...</p>
-          </div>
-        )}
-
         {/* Rate Limit / Error Modal Overlay */}
         {error && (
           <div className={styles.modalOverlay} onClick={() => setError(null)}>
@@ -674,10 +593,7 @@ function DashboardContent() {
                   className={styles.primaryBtn}
                   onClick={() => {
                     setError(null);
-                    fetch('/api/subscriptions/checkout', { method: 'POST' })
-                      .then(r => r.json())
-                      .then(d => { if (d?.url) window.location.href = d.url; })
-                      .catch(() => {});
+                    window.location.href = "/#pricing";
                   }}
                 >
                   Upgrade Plan
@@ -693,27 +609,214 @@ function DashboardContent() {
           </div>
         )}
 
-        {/* Generated Ideas Grid */}
-        {ideas.length > 0 && !isGenerating && (
-          <div className={styles.ideasGrid} style={{ flex: 1, width: "100%", paddingBottom: "24px" }}>
-            {ideas.map((idea, idx) => (
-              <IdeaCard
-                key={idea.idea_id}
-                idea={idea}
-                colorIndex={idx}
-                post={posts[idea.idea_id]}
-                product={posts[idea.idea_id] ? products[posts[idea.idea_id].post_id] : undefined}
-                activeIdeaId={activeIdeaId}
-                activePostId={activePostId}
-                isCrafting={isCrafting}
-                isProductizing={isProductizing}
-                isPublishing={isPublishing}
-                onCraftPost={handleCraftPost}
-                onToggleProductize={(id) => setActivePostId(activePostId === id ? null : id)}
-                onProductize={handleProductize}
-                onPublish={handlePublish}
-              />
-            ))}
+        {/* Conversational Chat Thread */}
+        {turns.length > 0 && (
+          <div className={styles.chatThread}>
+            {turns.map((turn, index) => {
+              const isLatestTurn = index === turns.length - 1;
+              return (
+                <React.Fragment key={turn.id}>
+                {/* User Prompt Message Bubble */}
+                <div className={styles.userMsgRow}>
+                  <div className={styles.userMsgBubble}>
+                    {turn.userPrompt}
+                  </div>
+                </div>
+
+                {/* AI Response Block for this turn */}
+                <div className={styles.aiMsgRow}>
+                  {/* Loading Spinner */}
+                  {turn.isLoading && (
+                    <div className={styles.loader} style={{ margin: "12px 0", gap: "10px" }}>
+                      <div className={styles.spinner}></div>
+                    </div>
+                  )}
+
+                  {/* Error State */}
+                  {turn.error && (
+                    <p style={{ color: "var(--color-error)", fontSize: "14px", margin: "4px 0" }}>
+                      {turn.error}
+                    </p>
+                  )}
+
+                  {/* Ideas Output */}
+                  {turn.ideas && turn.ideas.length > 0 && !turn.isLoading && (
+                    <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: "12px" }}>
+                      <p style={{ fontSize: "14px", fontWeight: 500, color: "var(--color-on-surface-variant)", margin: "0 0 4px" }}>
+                        Here are tailored content ideas architected for your topic:
+                      </p>
+                      <div className={styles.ideasGrid} style={{ width: "100%" }}>
+                        {turn.ideas.map((idea, idx) => (
+                          <IdeaCard
+                            key={idea.idea_id}
+                            idea={idea}
+                            colorIndex={idx}
+                            post={posts[idea.idea_id]}
+                            product={posts[idea.idea_id] ? products[posts[idea.idea_id].post_id] : undefined}
+                            activeIdeaId={activeIdeaId}
+                            activePostId={activePostId}
+                            isCrafting={isCrafting}
+                            isProductizing={isProductizing}
+                            isPublishing={isPublishing}
+                            onCraftPost={handleCraftPost}
+                            onToggleProductize={(id) => setActivePostId(activePostId === id ? null : id)}
+                            onProductize={handleProductize}
+                            onPublish={handlePublish}
+                          />
+                        ))}
+                      </div>
+
+                      {/* Contextual Action Chips for Ideas */}
+                      {isLatestTurn && (
+                        <div className={styles.aiActionChipsRow}>
+                          {turn.ideas[0] && (
+                            <button
+                              className={styles.aiActionChip}
+                              onClick={() => handleCraftPost(turn.ideas![0].idea_id, 'LinkedIn')}
+                            >
+                              📝 Draft Idea #1 for LinkedIn
+                            </button>
+                          )}
+                          {turn.ideas[1] && (
+                            <button
+                              className={styles.aiActionChip}
+                              onClick={() => handleCraftPost(turn.ideas![1].idea_id, 'X')}
+                            >
+                              🧵 Turn Idea #2 into X Thread
+                            </button>
+                          )}
+                          {turn.ideas[2] && (
+                            <button
+                              className={styles.aiActionChip}
+                              onClick={() => handleCraftPost(turn.ideas![2].idea_id, 'Instagram')}
+                            >
+                              📸 Draft Idea #3 for Instagram
+                            </button>
+                          )}
+                          <button
+                            className={styles.aiActionChip}
+                            onClick={() => handleGenerate(turn.userPrompt)}
+                          >
+                            🔄 Generate 3 More Ideas
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Post Output */}
+                  {turn.post && !turn.isLoading && (
+                    <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: "12px" }}>
+                      <p style={{ fontSize: "14px", fontWeight: 500, color: "var(--color-on-surface-variant)", margin: "0 0 4px" }}>
+                        Here is your crafted {turn.post.platform_type || turn.platform || "social"} post:
+                      </p>
+                      <PostResult
+                        post={turn.post}
+                        product={products[turn.post.post_id]}
+                        activePostId={activePostId}
+                        isProductizing={isProductizing}
+                        onToggleProductize={(id) => setActivePostId(activePostId === id ? null : id)}
+                        onProductize={handleProductize}
+                        onPublish={handlePublish}
+                        isPublishing={isPublishing}
+                      />
+
+                      {/* Contextual Action Chips for Posts */}
+                      {isLatestTurn && (
+                        <div className={styles.aiActionChipsRow}>
+                          <button
+                            className={styles.aiActionChip}
+                            onClick={() => handleProductize(turn.post!.post_id, 'ebook', 'Turn this post into an Ebook digital product outline')}
+                          >
+                            📚 Turn Post into Ebook / Digital Product
+                          </button>
+                          <button
+                            className={styles.aiActionChip}
+                            onClick={() => handleGeneratePost(turn.userPrompt, 'X', 'Adapt this post into an X / Twitter thread')}
+                          >
+                            🧵 Adapt for X / Twitter Thread
+                          </button>
+                          <button
+                            className={styles.aiActionChip}
+                            onClick={() => handleGeneratePost(turn.userPrompt, 'Instagram', 'Adapt this post for Instagram')}
+                          >
+                            📸 Adapt for Instagram
+                          </button>
+                          <button
+                            className={styles.aiActionChip}
+                            onClick={() => handleGeneratePost(turn.userPrompt, 'TikTok', 'Adapt this post into a TikTok video script')}
+                          >
+                            🎵 Adapt for TikTok Script
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Digital Product Output */}
+                  {turn.product && !turn.isLoading && (
+                    <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: "12px" }}>
+                      <p style={{ fontSize: "14px", fontWeight: 500, color: "var(--color-on-surface-variant)", margin: "0 0 4px" }}>
+                        Here is your generated digital product outline ({turn.product.product_type || "ebook"}):
+                      </p>
+
+                      <div style={{
+                        background: "var(--color-surface)",
+                        border: "1px solid var(--color-outline-variant)",
+                        borderRadius: "16px",
+                        padding: "20px",
+                        width: "100%",
+                        boxSizing: "border-box"
+                      }}>
+                        <h3 style={{ fontSize: "18px", fontWeight: 700, margin: "0 0 8px", color: "var(--color-on-surface)" }}>
+                          {turn.product.title}
+                        </h3>
+                        <p style={{ fontSize: "14px", color: "var(--color-on-surface-variant)", margin: "0 0 16px" }}>
+                          Suggested Price: <strong style={{ color: "var(--color-primary)" }}>${turn.product.monetization_price_suggestion}</strong>
+                        </p>
+                        
+                        {/* Chapters / Structure */}
+                        {turn.product.content_structure && (
+                          <div style={{ whiteSpace: "pre-wrap", fontSize: "13.5px", lineHeight: 1.6, color: "var(--color-on-surface)" }}>
+                            {typeof turn.product.content_structure === 'string' 
+                              ? turn.product.content_structure 
+                              : JSON.stringify(turn.product.content_structure, null, 2)}
+                          </div>
+                        )}
+
+                        <div style={{ marginTop: "16px", display: "flex", gap: "10px" }}>
+                          <button
+                            className={styles.primaryBtn}
+                            onClick={() => handlePublish(turn.product!.product_id)}
+                          >
+                            🚀 Publish Product Page
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Contextual Action Chips for Digital Products */}
+                      {isLatestTurn && (
+                        <div className={styles.aiActionChipsRow}>
+                          <button
+                            className={styles.aiActionChip}
+                            onClick={() => handleProductize(turn.product!.source_post_id, 'ebook', 'Add 2 more detailed chapters to this ebook outline')}
+                          >
+                            📖 Add 2 More Chapters
+                          </button>
+                          <button
+                            className={styles.aiActionChip}
+                            onClick={() => handleProductize(turn.product!.source_post_id, 'ebook', 'Suggest pricing and monetization launch strategy')}
+                          >
+                            💡 Suggest Monetization Strategy
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </React.Fragment>
+            );
+          })}
           </div>
         )}
       </div>

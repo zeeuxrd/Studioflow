@@ -41,17 +41,17 @@ export async function POST(request: Request) {
 
     let styleInstruction = '';
     if (format_style && format_style !== 'all') {
-      styleInstruction = `Ensure all generated content ideas strictly follow the '${format_style}' format style.`;
+      styleInstruction = `Ensure all generated content ideas strictly follow the '${format_style}' category angle.`;
     }
 
     const { object } = await aiService.generateObject({
-      system: `You are IdeaArchitect. Your goal is to generate exactly 1 highly engaging, platform-ready content idea based on the user's niche. 
-      Output MUST be valid JSON matching the provided schema. Do not generate generic advice, be specific, creative, and action-oriented.`,
-      prompt: `Niche: ${niche}\n${styleInstruction}\nGenerate exactly 1 brilliant content idea that this creator can post.`,
+      system: `You are IdeaArchitect. Your goal is to generate 3 highly engaging, creative, platform-ready content ideas based on the user's topic or niche. 
+      Output MUST be valid JSON matching the provided schema. Do not generate generic advice, be specific, creative, and action-oriented. Provide a balanced variety of categories unless a specific category is requested.`,
+      prompt: `Topic / Niche: ${niche}\n${styleInstruction}\nGenerate 3 brilliant, distinct content ideas that this creator can post.`,
       schema: z.object({
         ideas: z.array(z.object({
-          idea_text: z.string().describe('The core hook and description of the content idea. Keep it under 2 sentences.'),
-          category: z.string().describe("The format of the idea, e.g., 'Controversial Take', 'How-To', 'Listicle', 'Story'")
+          idea_text: z.string().describe('The core hook and description of the content idea. Keep it concise, engaging, and under 2 sentences.'),
+          category: z.enum(['Actionable Tip', 'Step-by-Step Guide', 'Key Insight', 'Story', 'Hot Take']).describe("The specific strategy category of the idea.")
         }))
       })
     });

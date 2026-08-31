@@ -27,7 +27,8 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { idea_id, platform_type, post_id, refinement_prompt, format_style } = body;
+    const { idea_id, platform_type, post_id, refinement_prompt, format_style, niche, topic } = body;
+    const activeTopic = niche || topic;
 
     // Refinement Branch
     if (post_id && (refinement_prompt || format_style)) {
@@ -103,19 +104,35 @@ export async function POST(request: Request) {
       });
     }
 
-    if (!idea_id || !platform_type) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    if (!idea_id && !activeTopic) {
+      return NextResponse.json({ error: 'Missing required topic or idea' }, { status: 400 });
     }
 
     const startTime = Date.now();
 
-    const idea = await prisma.contentIdea.findFirst({
-      where: { idea_id, user_id: session.user.id },
-      include: { user: { select: { tone_preference: true } } }
-    });
+    let idea = null;
+    if (idea_id) {
+      idea = await prisma.contentIdea.findFirst({
+        where: { idea_id, user_id: session.user.id },
+        include: { user: { select: { tone_preference: true } } }
+      });
+    }
+
+    if (!idea && activeTopic) {
+      idea = await prisma.contentIdea.create({
+        data: {
+          user_id: session.user.id,
+          niche: activeTopic,
+          idea_text: activeTopic,
+          category: 'General',
+          status: 'used'
+        },
+        include: { user: { select: { tone_preference: true } } }
+      });
+    }
 
     if (!idea) {
-      return NextResponse.json({ error: 'Idea not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Idea or topic not found' }, { status: 404 });
     }
 
     const tone = idea.user?.tone_preference || 'casual';

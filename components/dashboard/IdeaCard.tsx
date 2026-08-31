@@ -38,10 +38,11 @@ export default function IdeaCard({
   colorIndex = 0,
 }: IdeaCardProps) {
   const categoryColorMap: Record<string, string> = {
-    "Controversial Take": styles.pillPrimary,
-    "How-To": styles.pillGreen,
-    "Listicle": styles.pillBlue,
+    "Actionable Tip": styles.pillGreen,
+    "Step-by-Step Guide": styles.pillBlue,
+    "Key Insight": styles.pillPurple,
     "Story": styles.pillOrange,
+    "Hot Take": styles.pillPrimary,
   };
   const pillClass = categoryColorMap[idea.category] ?? styles.pillPurple;
 
