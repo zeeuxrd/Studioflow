@@ -24,6 +24,7 @@ import {
   Check
 } from "lucide-react";
 import styles from "./dashboard.module.css";
+import landingStyles from "../page.module.css";
 import UsageBadge from '@/components/dashboard/UsageBadge';
 
 const NAV_ITEMS = [
@@ -38,12 +39,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [chatsOpen, setChatsOpen] = useState(false);
   const [chats, setChats] = useState<any[]>([]);
-  const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const [billingPeriod, setBillingPeriod] = useState<"monthly" | "yearly">("monthly");
-  const [mobilePlanTab, setMobilePlanTab] = useState<"starter" | "creator">("creator");
   const [subscribing, setSubscribing] = useState<string | null>(null);
 
   const handleSubscribePlan = async (planKey: string) => {
@@ -329,31 +328,42 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               maxHeight: "90vh", 
               overflowY: "auto", 
               padding: "36px 28px", 
-              borderRadius: 24 
+              borderRadius: 24,
+              position: "relative"
             }} 
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Modal Header */}
-            <div style={{ textAlign: "center", marginBottom: 28, position: "relative" }}>
-              <button
-                onClick={() => setUpgradeModalOpen(false)}
-                style={{
-                  position: "absolute",
-                  top: -12,
-                  right: -12,
-                  background: "transparent",
-                  border: "none",
-                  cursor: "pointer",
-                  color: "var(--color-on-surface-variant)"
-                }}
-              >
-                <X size={24} />
-              </button>
+            {/* Top Right Circular Close X Button */}
+            <button
+              onClick={() => setUpgradeModalOpen(false)}
+              aria-label="Close upgrade modal"
+              style={{
+                position: "absolute",
+                top: 18,
+                right: 20,
+                width: 36,
+                height: 36,
+                borderRadius: "50%",
+                background: "var(--color-surface-variant)",
+                border: "1px solid var(--color-outline-variant)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                color: "var(--color-on-surface)",
+                transition: "all 0.2s ease",
+                zIndex: 10
+              }}
+            >
+              <X size={18} />
+            </button>
 
-              <h2 style={{ fontSize: 28, fontWeight: 700, margin: "0 0 8px", color: "var(--color-on-surface)" }}>
+            {/* Modal Header */}
+            <div className={styles.modalHeaderBox}>
+              <h2 className={styles.modalHeaderTitle}>
                 Flexible plans for every creator
               </h2>
-              <p style={{ fontSize: 15, color: "var(--color-on-surface-variant)", margin: "0 0 20px" }}>
+              <p className={styles.modalHeaderSub}>
                 Start creating AI-driven posts & digital products today. Cancel anytime.
               </p>
 
@@ -366,8 +376,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     padding: "8px 20px",
                     borderRadius: 100,
                     border: "none",
-                    background: billingPeriod === "monthly" ? "var(--color-primary)" : "transparent",
-                    color: billingPeriod === "monthly" ? "var(--color-on-primary)" : "var(--color-on-surface-variant)",
+                    background: billingPeriod === "monthly" ? "#1a1a1a" : "transparent",
+                    color: billingPeriod === "monthly" ? "#ffffff" : "var(--color-on-surface-variant)",
                     fontWeight: 700,
                     fontSize: 13,
                     cursor: "pointer"
@@ -382,252 +392,185 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     padding: "8px 20px",
                     borderRadius: 100,
                     border: "none",
-                    background: billingPeriod === "yearly" ? "var(--color-primary)" : "transparent",
-                    color: billingPeriod === "yearly" ? "var(--color-on-primary)" : "var(--color-on-surface-variant)",
+                    background: billingPeriod === "yearly" ? "#1a1a1a" : "transparent",
+                    color: billingPeriod === "yearly" ? "#ffffff" : "var(--color-on-surface-variant)",
                     fontWeight: 700,
                     fontSize: 13,
                     cursor: "pointer"
                   }}
                 >
-                  Yearly <span style={{ fontSize: 10, background: "rgba(255,255,255,0.2)", padding: "2px 6px", borderRadius: 8, marginLeft: 4 }}>20% OFF</span>
+                  Yearly
                 </button>
               </div>
             </div>
 
-            {/* Mobile Plan Tab Bar (Starter vs Creator) */}
-            <div className={styles.modalMobilePlanTabs}>
-              <button
-                type="button"
-                className={`${styles.modalMobilePlanTabBtn} ${mobilePlanTab === "starter" ? styles.modalMobilePlanTabActive : ""}`}
-                onClick={() => setMobilePlanTab("starter")}
-              >
-                Starter Plan
-              </button>
-              <button
-                type="button"
-                className={`${styles.modalMobilePlanTabBtn} ${mobilePlanTab === "creator" ? styles.modalMobilePlanTabActive : ""}`}
-                onClick={() => setMobilePlanTab("creator")}
-              >
-                Creator Plan 🔥
-              </button>
-            </div>
-
-            {/* Desktop Pricing Cards Grid (All 3 Plans) */}
-            <div className={styles.modalDesktopGrid} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 20 }}>
-              {/* Starter */}
-              <div style={{
-                background: "var(--color-surface)",
-                border: "1px solid var(--color-outline)",
-                borderRadius: 20,
-                padding: 24,
-                display: "flex",
-                flexDirection: "column",
-                justify: "space-between"
-              }}>
+            {/* Desktop & Mobile Pricing Cards Grid (Fluid Clamp Typography + Responsive Vertical Stacking) */}
+            <div className={styles.modalDesktopGrid} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "20px", width: "100%", alignItems: "stretch", marginTop: "12px" }}>
+              {/* Card 1: Starter */}
+              <div className={landingStyles.pricingCardStandard} style={{ margin: 0, height: "100%", padding: "2.2rem 1.6rem 1.6rem", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
                 <div>
-                  <h3 style={{ fontSize: 20, fontWeight: 700, margin: "0 0 6px", color: "var(--color-on-surface)" }}>Starter</h3>
-                  <p style={{ fontSize: 13, color: "var(--color-on-surface-variant)", margin: "0 0 16px" }}>
+                  <h3 className={`${landingStyles.pricingCardTitle} ${styles.clampTitle}`}>Starter</h3>
+                  <p className={`${landingStyles.pricingCardDesc} ${styles.clampDesc}`} style={{ minHeight: "40px" }}>
                     Perfect for solo creators starting their content journey.
                   </p>
-                  <div style={{ fontSize: 28, fontWeight: 800, color: "var(--color-on-surface)", marginBottom: 16 }}>
-                    &#8358;{billingPeriod === "monthly" ? "7,000" : "20,000"}
-                    <span style={{ fontSize: 12, fontWeight: 400, color: "var(--color-on-surface-variant)" }}>/{billingPeriod === "monthly" ? "mo" : "yr"}</span>
-                  </div>
-                  <ul style={{ listStyle: "none", padding: 0, margin: "0 0 20px", fontSize: 13, display: "flex", flexDirection: "column", gap: 10 }}>
-                    <li style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--color-on-surface)" }}><Check size={16} color="var(--color-primary)" /> 50 AI content generations/mo</li>
-                    <li style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--color-on-surface)" }}><Check size={16} color="var(--color-primary)" /> 2 platform integrations</li>
-                    <li style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--color-on-surface)" }}><Check size={16} color="var(--color-primary)" /> Basic analytics</li>
-                    <li style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--color-on-surface)" }}><Check size={16} color="var(--color-primary)" /> Idea Architect tool</li>
-                  </ul>
-                </div>
-                <button
-                  className={styles.secondaryBtn}
-                  onClick={() => handleSubscribePlan("starter")}
-                  disabled={subscribing === "starter"}
-                >
-                  {subscribing === "starter" ? "Redirecting..." : "Choose Starter"}
-                </button>
-              </div>
-
-              {/* Creator (Featured Popular) */}
-              <div style={{
-                background: "color-mix(in srgb, var(--color-primary) 10%, var(--color-surface))",
-                border: "2px solid var(--color-primary)",
-                borderRadius: 20,
-                padding: 24,
-                display: "flex",
-                flexDirection: "column",
-                justify: "space-between",
-                position: "relative"
-              }}>
-                <span style={{
-                  position: "absolute",
-                  top: -12,
-                  left: "50%",
-                  transform: "translateX(-50%)",
-                  background: "var(--color-primary)",
-                  color: "var(--color-on-primary)",
-                  fontSize: 10,
-                  fontWeight: 800,
-                  letterSpacing: "0.8px",
-                  padding: "4px 12px",
-                  borderRadius: 100
-                }}>MOST POPULAR</span>
-
-                <div>
-                  <h3 style={{ fontSize: 20, fontWeight: 700, margin: "8px 0 6px", color: "var(--color-on-surface)" }}>Creator</h3>
-                  <p style={{ fontSize: 13, color: "var(--color-on-surface-variant)", margin: "0 0 16px" }}>
-                    For growing creators ready to scale their content output.
-                  </p>
-                  <div style={{ fontSize: 28, fontWeight: 800, color: "var(--color-primary)", marginBottom: 16 }}>
-                    &#8358;{billingPeriod === "monthly" ? "14,000" : "50,000"}
-                    <span style={{ fontSize: 12, fontWeight: 400, color: "var(--color-on-surface-variant)" }}>/{billingPeriod === "monthly" ? "mo" : "yr"}</span>
-                  </div>
-                  <ul style={{ listStyle: "none", padding: 0, margin: "0 0 20px", fontSize: 13, display: "flex", flexDirection: "column", gap: 10 }}>
-                    <li style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--color-on-surface)" }}><Check size={16} color="var(--color-primary)" /> 200 AI content generations/mo</li>
-                    <li style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--color-on-surface)" }}><Check size={16} color="var(--color-primary)" /> All platform integrations</li>
-                    <li style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--color-on-surface)" }}><Check size={16} color="var(--color-primary)" /> Advanced analytics</li>
-                    <li style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--color-on-surface)" }}><Check size={16} color="var(--color-primary)" /> Content Crafter + Product Generator</li>
-                    <li style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--color-on-surface)" }}><Check size={16} color="var(--color-primary)" /> Priority support</li>
-                  </ul>
-                </div>
-                <button
-                  className={styles.primaryBtn}
-                  onClick={() => handleSubscribePlan("creator")}
-                  disabled={subscribing === "creator"}
-                >
-                  {subscribing === "creator" ? "Redirecting..." : "Upgrade to Creator"}
-                </button>
-              </div>
-
-              {/* Pro */}
-              <div style={{
-                background: "var(--color-surface)",
-                border: "1px solid var(--color-outline)",
-                borderRadius: 20,
-                padding: 24,
-                display: "flex",
-                flexDirection: "column",
-                justify: "space-between"
-              }}>
-                <div>
-                  <h3 style={{ fontSize: 20, fontWeight: 700, margin: "0 0 6px", color: "var(--color-on-surface)" }}>Pro</h3>
-                  <p style={{ fontSize: 13, color: "var(--color-on-surface-variant)", margin: "0 0 16px" }}>
-                    For teams & agencies managing multiple client accounts.
-                  </p>
-                  <div style={{ fontSize: 28, fontWeight: 800, color: "var(--color-on-surface)", marginBottom: 16 }}>
-                    &#8358;{billingPeriod === "monthly" ? "30,000" : "100,000"}
-                    <span style={{ fontSize: 12, fontWeight: 400, color: "var(--color-on-surface-variant)" }}>/{billingPeriod === "monthly" ? "mo" : "yr"}</span>
-                  </div>
-                  <ul style={{ listStyle: "none", padding: 0, margin: "0 0 20px", fontSize: 13, display: "flex", flexDirection: "column", gap: 10 }}>
-                    <li style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--color-on-surface)" }}><Check size={16} color="var(--color-primary)" /> Unlimited AI generations</li>
-                    <li style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--color-on-surface)" }}><Check size={16} color="var(--color-primary)" /> Multi-account management</li>
-                    <li style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--color-on-surface)" }}><Check size={16} color="var(--color-primary)" /> Custom branding & exports</li>
-                    <li style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--color-on-surface)" }}><Check size={16} color="var(--color-primary)" /> All AI agent tools</li>
-                    <li style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--color-on-surface)" }}><Check size={16} color="var(--color-primary)" /> Dedicated account manager</li>
-                  </ul>
-                </div>
-                <button
-                  className={styles.secondaryBtn}
-                  onClick={() => handleSubscribePlan("pro")}
-                  disabled={subscribing === "pro"}
-                >
-                  {subscribing === "pro" ? "Redirecting..." : "Choose Pro"}
-                </button>
-              </div>
-            </div>
-
-            {/* Mobile-Only Selected Card View (Starter or Creator) */}
-            <div className={styles.modalMobilePlanTabs} style={{ flexDirection: "column", background: "transparent", padding: 0 }}>
-              {mobilePlanTab === "starter" ? (
-                <div style={{
-                  background: "var(--color-surface)",
-                  border: "1px solid var(--color-outline)",
-                  borderRadius: 20,
-                  padding: 24,
-                  width: "100%",
-                  boxSizing: "border-box",
-                  display: "flex",
-                  flexDirection: "column",
-                  justify: "space-between"
-                }}>
-                  <div>
-                    <h3 style={{ fontSize: 20, fontWeight: 700, margin: "0 0 6px", color: "var(--color-on-surface)" }}>Starter</h3>
-                    <p style={{ fontSize: 13, color: "var(--color-on-surface-variant)", margin: "0 0 16px" }}>
-                      Perfect for solo creators starting their content journey.
-                    </p>
-                    <div style={{ fontSize: 28, fontWeight: 800, color: "var(--color-on-surface)", marginBottom: 16 }}>
+                  <div className={landingStyles.pricingPriceRow} style={{ minHeight: "48px", marginBottom: "1.2rem" }}>
+                    <span className={`${landingStyles.pricingPrice} ${styles.clampPrice}`}>
                       &#8358;{billingPeriod === "monthly" ? "7,000" : "20,000"}
-                      <span style={{ fontSize: 12, fontWeight: 400, color: "var(--color-on-surface-variant)" }}>/{billingPeriod === "monthly" ? "mo" : "yr"}</span>
+                    </span>
+                    <div className={landingStyles.pricingPeriodCol}>
+                      <span className={landingStyles.pricingPeriod}>monthly</span>
+                      <span className={landingStyles.pricingBilledPeriod}>billed {billingPeriod === "monthly" ? "monthly" : "annually"}</span>
                     </div>
-                    <ul style={{ listStyle: "none", padding: 0, margin: "0 0 20px", fontSize: 13, display: "flex", flexDirection: "column", gap: 10 }}>
-                      <li style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--color-on-surface)" }}><Check size={16} color="var(--color-primary)" /> 50 AI content generations/mo</li>
-                      <li style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--color-on-surface)" }}><Check size={16} color="var(--color-primary)" /> 2 platform integrations</li>
-                      <li style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--color-on-surface)" }}><Check size={16} color="var(--color-primary)" /> Basic analytics</li>
-                      <li style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--color-on-surface)" }}><Check size={16} color="var(--color-primary)" /> Idea Architect tool</li>
-                    </ul>
                   </div>
                   <button
-                    className={styles.secondaryBtn}
+                    type="button"
+                    className={`${landingStyles.pricingCardButton} ${landingStyles.pricingCardButtonOutline}`}
                     onClick={() => handleSubscribePlan("starter")}
                     disabled={subscribing === "starter"}
+                    style={{ cursor: 'pointer', fontFamily: 'inherit', width: "100%" }}
                   >
                     {subscribing === "starter" ? "Redirecting..." : "Choose Starter"}
                   </button>
                 </div>
-              ) : (
-                <div style={{
-                  background: "color-mix(in srgb, var(--color-primary) 10%, var(--color-surface))",
-                  border: "2px solid var(--color-primary)",
-                  borderRadius: 20,
-                  padding: 24,
-                  width: "100%",
-                  boxSizing: "border-box",
-                  display: "flex",
-                  flexDirection: "column",
-                  justify: "space-between",
-                  position: "relative"
-                }}>
-                  <span style={{
-                    position: "absolute",
-                    top: -12,
-                    left: "50%",
-                    transform: "translateX(-50%)",
-                    background: "var(--color-primary)",
-                    color: "var(--color-on-primary)",
-                    fontSize: 10,
-                    fontWeight: 800,
-                    letterSpacing: "0.8px",
-                    padding: "4px 12px",
-                    borderRadius: 100
-                  }}>MOST POPULAR</span>
+                
+                <div>
+                  <div className={landingStyles.pricingCardDivider} style={{ margin: "1.5rem 0 1.2rem" }}></div>
+                  <ul className={landingStyles.pricingFeaturesList} style={{ margin: 0 }}>
+                    <li className={`${landingStyles.pricingFeatureItem} ${styles.clampFeature}`}>
+                      <Check className={landingStyles.pricingCheckmark} size={20} />
+                      50 AI content generations/mo
+                    </li>
+                    <li className={`${landingStyles.pricingFeatureItem} ${styles.clampFeature}`}>
+                      <Check className={landingStyles.pricingCheckmark} size={20} />
+                      2 platform integrations
+                    </li>
+                    <li className={`${landingStyles.pricingFeatureItem} ${styles.clampFeature}`}>
+                      <Check className={landingStyles.pricingCheckmark} size={20} />
+                      Basic analytics
+                    </li>
+                    <li className={`${landingStyles.pricingFeatureItem} ${styles.clampFeature}`}>
+                      <Check className={landingStyles.pricingCheckmark} size={20} />
+                      Idea Architect tool
+                    </li>
+                    <li className={`${landingStyles.pricingFeatureItem} ${styles.clampFeature}`}>
+                      <Check className={landingStyles.pricingCheckmark} size={20} />
+                      Email support
+                    </li>
+                  </ul>
+                </div>
+              </div>
 
-                  <div>
-                    <h3 style={{ fontSize: 20, fontWeight: 700, margin: "8px 0 6px", color: "var(--color-on-surface)" }}>Creator</h3>
-                    <p style={{ fontSize: 13, color: "var(--color-on-surface-variant)", margin: "0 0 16px" }}>
-                      For growing creators ready to scale their content output.
-                    </p>
-                    <div style={{ fontSize: 28, fontWeight: 800, color: "var(--color-primary)", marginBottom: 16 }}>
+              {/* Card 2: Creator (Featured Popular) */}
+              <div className={landingStyles.pricingCardStandard} style={{ margin: 0, height: "100%", padding: "2.2rem 1.6rem 1.6rem", display: "flex", flexDirection: "column", justifyContent: "space-between", position: "relative", border: "2px solid var(--color-primary)", backgroundColor: "color-mix(in srgb, var(--color-primary) 8%, var(--color-surface))" }}>
+                <span className={styles.mostPopularBadge}>
+                  MOST POPULAR
+                </span>
+
+                <div>
+                  <h3 className={`${landingStyles.pricingCardTitle} ${styles.clampTitle}`}>Creator</h3>
+                  <p className={`${landingStyles.pricingCardDesc} ${styles.clampDesc}`} style={{ minHeight: "40px" }}>
+                    For growing creators ready to scale their content output.
+                  </p>
+                  <div className={landingStyles.pricingPriceRow} style={{ minHeight: "48px", marginBottom: "1.2rem" }}>
+                    <span className={`${landingStyles.pricingPrice} ${styles.clampPrice}`} style={{ color: "var(--color-primary)" }}>
                       &#8358;{billingPeriod === "monthly" ? "14,000" : "50,000"}
-                      <span style={{ fontSize: 12, fontWeight: 400, color: "var(--color-on-surface-variant)" }}>/{billingPeriod === "monthly" ? "mo" : "yr"}</span>
+                    </span>
+                    <div className={landingStyles.pricingPeriodCol}>
+                      <span className={landingStyles.pricingPeriod}>monthly</span>
+                      <span className={landingStyles.pricingBilledPeriod}>billed {billingPeriod === "monthly" ? "monthly" : "annually"}</span>
                     </div>
-                    <ul style={{ listStyle: "none", padding: 0, margin: "0 0 20px", fontSize: 13, display: "flex", flexDirection: "column", gap: 10 }}>
-                      <li style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--color-on-surface)" }}><Check size={16} color="var(--color-primary)" /> 200 AI content generations/mo</li>
-                      <li style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--color-on-surface)" }}><Check size={16} color="var(--color-primary)" /> All platform integrations</li>
-                      <li style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--color-on-surface)" }}><Check size={16} color="var(--color-primary)" /> Advanced analytics</li>
-                      <li style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--color-on-surface)" }}><Check size={16} color="var(--color-primary)" /> Content Crafter + Product Generator</li>
-                      <li style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--color-on-surface)" }}><Check size={16} color="var(--color-primary)" /> Priority support</li>
-                    </ul>
                   </div>
                   <button
-                    className={styles.primaryBtn}
+                    type="button"
+                    className={`${landingStyles.pricingCardButton} ${landingStyles.pricingCardButtonPrimary}`}
                     onClick={() => handleSubscribePlan("creator")}
                     disabled={subscribing === "creator"}
+                    style={{ cursor: 'pointer', fontFamily: 'inherit', width: "100%" }}
                   >
                     {subscribing === "creator" ? "Redirecting..." : "Upgrade to Creator"}
                   </button>
                 </div>
-              )}
+                
+                <div>
+                  <div className={landingStyles.pricingCardDivider} style={{ margin: "1.5rem 0 1.2rem" }}></div>
+                  <ul className={landingStyles.pricingFeaturesList} style={{ margin: 0 }}>
+                    <li className={`${landingStyles.pricingFeatureItem} ${styles.clampFeature}`}>
+                      <Check className={landingStyles.pricingCheckmark} size={20} />
+                      200 AI content generations/mo
+                    </li>
+                    <li className={`${landingStyles.pricingFeatureItem} ${styles.clampFeature}`}>
+                      <Check className={landingStyles.pricingCheckmark} size={20} />
+                      All platform integrations
+                    </li>
+                    <li className={`${landingStyles.pricingFeatureItem} ${styles.clampFeature}`}>
+                      <Check className={landingStyles.pricingCheckmark} size={20} />
+                      Advanced analytics
+                    </li>
+                    <li className={`${landingStyles.pricingFeatureItem} ${styles.clampFeature}`}>
+                      <Check className={landingStyles.pricingCheckmark} size={20} />
+                      Content Crafter + Product Generator
+                    </li>
+                    <li className={`${landingStyles.pricingFeatureItem} ${styles.clampFeature}`}>
+                      <Check className={landingStyles.pricingCheckmark} size={20} />
+                      Priority support
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Card 3: Pro (Hidden on Mobile) */}
+              <div className={`${landingStyles.pricingCardStandard} ${styles.hideOnMobile}`} style={{ margin: 0, height: "100%", padding: "2.2rem 1.6rem 1.6rem", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                <div>
+                  <h3 className={`${landingStyles.pricingCardTitle} ${styles.clampTitle}`}>Pro</h3>
+                  <p className={`${landingStyles.pricingCardDesc} ${styles.clampDesc}`} style={{ minHeight: "40px" }}>
+                    For teams & agencies managing multiple client accounts.
+                  </p>
+                  <div className={landingStyles.pricingPriceRow} style={{ minHeight: "48px", marginBottom: "1.2rem" }}>
+                    <span className={`${landingStyles.pricingPrice} ${styles.clampPrice}`}>
+                      &#8358;{billingPeriod === "monthly" ? "30,000" : "100,000"}
+                    </span>
+                    <div className={landingStyles.pricingPeriodCol}>
+                      <span className={landingStyles.pricingPeriod}>monthly</span>
+                      <span className={landingStyles.pricingBilledPeriod}>billed {billingPeriod === "monthly" ? "monthly" : "annually"}</span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className={`${landingStyles.pricingCardButton} ${landingStyles.pricingCardButtonOutline}`}
+                    onClick={() => handleSubscribePlan("pro")}
+                    disabled={subscribing === "pro"}
+                    style={{ cursor: 'pointer', fontFamily: 'inherit', width: "100%" }}
+                  >
+                    {subscribing === "pro" ? "Redirecting..." : "Choose Pro"}
+                  </button>
+                </div>
+                
+                <div>
+                  <div className={landingStyles.pricingCardDivider} style={{ margin: "1.5rem 0 1.2rem" }}></div>
+                  <ul className={landingStyles.pricingFeaturesList} style={{ margin: 0 }}>
+                    <li className={`${landingStyles.pricingFeatureItem} ${styles.clampFeature}`}>
+                      <Check className={landingStyles.pricingCheckmark} size={20} />
+                      Unlimited AI generations
+                    </li>
+                    <li className={`${landingStyles.pricingFeatureItem} ${styles.clampFeature}`}>
+                      <Check className={landingStyles.pricingCheckmark} size={20} />
+                      Multi-account management
+                    </li>
+                    <li className={`${landingStyles.pricingFeatureItem} ${styles.clampFeature}`}>
+                      <Check className={landingStyles.pricingCheckmark} size={20} />
+                      Custom branding & exports
+                    </li>
+                    <li className={`${landingStyles.pricingFeatureItem} ${styles.clampFeature}`}>
+                      <Check className={landingStyles.pricingCheckmark} size={20} />
+                      All AI agent tools
+                    </li>
+                    <li className={`${landingStyles.pricingFeatureItem} ${styles.clampFeature}`}>
+                      <Check className={landingStyles.pricingCheckmark} size={20} />
+                      Dedicated account manager
+                    </li>
+                  </ul>
+                </div>
+              </div>
             </div>
           </div>
         </div>

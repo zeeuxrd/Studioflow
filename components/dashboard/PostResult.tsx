@@ -35,9 +35,11 @@ export default function PostResult({
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(displayContent);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(displayContent);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }
     } catch {
       // fallback
     }
@@ -99,118 +101,9 @@ export default function PostResult({
       )}
 
       <div className={styles.postMeta}>
-        Predicted Engagement: {Math.round(post.engagement_prediction_score * 100)}% Match
+        Predicted Engagement: {Math.round((typeof post.engagement_prediction_score === 'number' && !isNaN(post.engagement_prediction_score) ? post.engagement_prediction_score : 0.85) * 100)}% Match
       </div>
-
-      {!product && (
-        <div className={styles.actionRow}>
-          <button
-            className={styles.secondaryBtn}
-            onClick={() => onToggleProductize(post.post_id)}
-            disabled={isProductizing === post.post_id}
-          >
-            {isProductizing === post.post_id
-              ? "Alchemizing..."
-              : <>Turn into Digital Product <Sparkles size={16} /></>}
-          </button>
-        </div>
-      )}
-
-      {activePostId === post.post_id && !product && (
-        <div className={styles.platformDropdown}>
-          <p className={styles.platformTitle}>Select Product Type:</p>
-          <div className={styles.platformButtons}>
-            {PRODUCT_TYPES.map((type) => (
-              <button
-                key={type}
-                className={styles.platformBtn}
-                onClick={() => onProductize(post.post_id, type)}
-              >
-                {type.charAt(0).toUpperCase() + type.slice(1)}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {product && (
-        <div className={styles.premiumProductCard}>
-          <div className={styles.premiumHeader}>
-            <span className={styles.premiumBadge}>Premium {product.product_type.charAt(0).toUpperCase() + product.product_type.slice(1)}</span>
-            <span className={styles.premiumPrice}><span className={styles.currencySymbol}>&#8358;</span>{(product.monetization_price_suggestion / 100).toLocaleString()} Est. Value</span>
-          </div>
-
-          {/* Conversational timeline for products */}
-          {(!product.refinement_history || product.refinement_history.length === 0) && isProductizing !== product.source_post_id ? (
-            <>
-              <h3 className={styles.premiumTitle}>{product.title}</h3>
-              <div className={styles.premiumStructure}>
-                <pre>{JSON.stringify(product.content_structure, null, 2)}</pre>
-              </div>
-            </>
-          ) : (
-            <div className={styles.chatThread} style={{ marginBottom: "20px" }}>
-              {/* Turn 0: Original Product */}
-              <div className={styles.chatMessageAgent}>
-                <div className={styles.chatMessageHeader}>
-                  <span>ProductAlchemist (Original)</span>
-                </div>
-                <h3 className={styles.premiumTitle} style={{ fontSize: "14px", margin: "4px 0 8px 0" }}>{product.title}</h3>
-                <div className={styles.premiumStructure}>
-                  <pre>{JSON.stringify(product.content_structure, null, 2)}</pre>
-                </div>
-              </div>
-
-              {/* Turn 1+: Refinements */}
-              {product.refinement_history && product.refinement_history.map((ref, idx) => (
-                <div key={idx} style={{ display: "contents" }}>
-                  {/* User Instruction */}
-                  <div className={styles.chatMessageUser}>
-                    {ref.instruction}
-                  </div>
-
-                  {/* AI Response */}
-                  <div className={styles.chatMessageAgent}>
-                    <div className={styles.chatMessageHeader}>
-                      <span>ProductAlchemist (Rev. {idx + 1}) - <span className={styles.currencySymbol}>&#8358;</span>{(ref.monetization_price_suggestion / 100).toLocaleString()}</span>
-                    </div>
-                    <h3 className={styles.premiumTitle} style={{ fontSize: "14px", margin: "4px 0 8px 0" }}>{ref.title}</h3>
-                    <div className={styles.premiumStructure}>
-                      <pre>{JSON.stringify(ref.content_structure, null, 2)}</pre>
-                    </div>
-                  </div>
-                </div>
-              ))}
-
-              {/* Turn Active: Agent Thinking Bubble */}
-              {isProductizing === product.source_post_id && (
-                <div className={styles.chatMessageAgent} style={{ opacity: 0.8 }}>
-                  <div className={styles.chatMessageHeader}>
-                    <span>ProductAlchemist is thinking...</span>
-                  </div>
-                  <div className={styles.loadingText} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span className={styles.spinner} style={{ width: '16px', height: '16px', borderWidth: '2px', margin: 0 }}></span>
-                    <span>Alchemizing outline...</span>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          <div className={styles.postMeta}>* This is an estimate. Actual earnings may vary.</div>
-          <div className={styles.actionRow}>
-            <button
-              className={`${styles.secondaryBtn} ${styles.generateBtn}`}
-              onClick={() => onPublish(product.product_id)}
-              disabled={isPublishing === product.product_id}
-            >
-              {isPublishing === product.product_id
-                ? "Publishing..."
-                : "Publish & Track Revenue"}
-            </button>
-          </div>
-        </div>
-      )}
+    </div>
     </div>
   );
 }

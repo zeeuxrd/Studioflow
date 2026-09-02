@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { auth } from '@/lib/auth';
 import { checkGenerationLimit, incrementGenerationCount } from '@/lib/rate-limit';
 import { unauthorized, rateLimited } from '@/lib/api-error';
-import { aiService } from '@/lib/providers/deepseek-provider';
+import { aiProvider } from '@/lib/services/aiProvider';
 import type { ProductType, ProductStatus } from '@prisma/client';
 
 interface RefinementStep {
@@ -128,8 +128,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Post not found" }, { status: 404 });
     }
 
-    // Use DeepSeek to generate the product structure
-    const { object } = await aiService.generateObject({
+    // Use AI Provider to generate the product structure
+    const { object } = await aiProvider.generateObject({
       system: `You are ProductAlchemist, an expert digital product creator and monetization strategist.
       Your goal is to turn a high-performing social media post into a complete, fully-written digital product.
       Output MUST be valid JSON matching the schema.`,

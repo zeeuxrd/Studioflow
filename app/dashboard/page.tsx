@@ -6,18 +6,12 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { 
   Sparkles, 
-  Send, 
-  HelpCircle, 
-  Zap,
-  Sun,
-  Moon,
-  CheckCircle,
-  MessageSquarePlus,
-  MoreVertical
+  Send 
 } from 'lucide-react';
-import type { Idea, Post, Product } from "@/components/dashboard/types";
+import type { Idea, Post, Product, ChatTurn } from "@/components/dashboard/types";
 import IdeaCard from "@/components/dashboard/IdeaCard";
 import PostResult from "@/components/dashboard/PostResult";
+import { isGreetingPrompt, detectPlatformFromPrompt } from "@/lib/config/platforms";
 import styles from './dashboard.module.css';
 
 export default function DashboardPage() {
@@ -28,8 +22,8 @@ function DashboardContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const userId = session?.user?.id ?? null;
-  const userName = session?.user?.name ?? 'Creator';
-  const firstName = userName.split(' ')[0];
+  const userName = (session?.user?.name || 'Creator').trim();
+  const firstName = userName.split(' ')[0] || 'Creator';
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -53,19 +47,6 @@ function DashboardContent() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [styleMenuOpen, setStyleMenuOpen] = useState(false);
   
-  interface ChatTurn {
-    id: string;
-    userPrompt: string;
-    timestamp: number;
-    intent: 'ideas' | 'post' | 'product' | 'refinement';
-    ideas?: Idea[];
-    post?: Post;
-    product?: Product;
-    platform?: string;
-    isLoading?: boolean;
-    error?: string | null;
-  }
-
   const [turns, setTurns] = useState<ChatTurn[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [ideas, setIdeas] = useState<Idea[]>([]);
@@ -340,9 +321,23 @@ function DashboardContent() {
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || 'Failed to generate post');
 
-      setPosts(prev => ({ ...prev, [data.output.post_id || turnId]: data.output }));
-      setTurns(prev => prev.map(t => t.id === turnId ? { ...t, isLoading: false, post: data.output } : t));
-      window.dispatchEvent(new Event("refresh-ideas"));
+      if (data.is_chat) {
+        setTurns(prev => prev.map(t => t.id === turnId ? {
+          ...t,
+          isLoading: false,
+          isChat: true,
+          conversationalText: data.conversational_text
+        } : t));
+      } else {
+        setPosts(prev => ({ ...prev, [data.output.post_id || turnId]: data.output }));
+        setTurns(prev => prev.map(t => t.id === turnId ? {
+          ...t,
+          isLoading: false,
+          post: data.output,
+          conversationalText: data.conversational_text
+        } : t));
+        window.dispatchEvent(new Event("refresh-ideas"));
+      }
     } catch (err: any) {
       setTurns(prev => prev.map(t => t.id === turnId ? { ...t, isLoading: false, error: err.message } : t));
     } finally {
@@ -412,6 +407,12 @@ function DashboardContent() {
     const prompt = niche.trim();
     if (!prompt) return;
 
+    if (isGreetingPrompt(prompt)) {
+      handleGeneratePost(prompt, "LinkedIn");
+      return;
+    }
+
+    const detectedPlatform = detectPlatformFromPrompt(prompt);
     const lower = prompt.toLowerCase();
     const isProductReq = lower.includes("ebook") || lower.includes("product") || lower.includes("lead magnet") || lower.includes("checklist") || lower.includes("course");
 
@@ -420,12 +421,24 @@ function DashboardContent() {
     if (isProductReq && (latestPost || activePostId)) {
       const targetPostId = latestPost?.post_id || activePostId || "latest";
       handleProductize(targetPostId, "ebook", prompt);
+    } else if (detectedPlatform) {
+      handleGeneratePost(prompt, detectedPlatform);
     } else {
-      let platform = "LinkedIn";
-      if (lower.includes("x") || lower.includes("twitter") || lower.includes("thread")) platform = "X";
-      if (lower.includes("instagram") || lower.includes("ig")) platform = "Instagram";
-      if (lower.includes("tiktok")) platform = "TikTok";
-      handleGeneratePost(prompt, platform);
+      // General topic without platform specified -> Present platform selection chips!
+      const turnId = `turn_${Date.now()}`;
+      setTurns(prev => [
+        ...prev,
+        {
+          id: turnId,
+          userPrompt: prompt,
+          timestamp: Date.now(),
+          intent: 'platform_select',
+          conversationalText: `Great topic! Which platform would you like to create content for?`,
+          isLoading: false
+        }
+      ]);
+      setNiche('');
+      setIsDockedBottom(true);
     }
   };
 
@@ -625,10 +638,12 @@ function DashboardContent() {
 
                 {/* AI Response Block for this turn */}
                 <div className={styles.aiMsgRow}>
-                  {/* Loading Spinner */}
+                  {/* Animated Typing Bubble Indicator */}
                   {turn.isLoading && (
-                    <div className={styles.loader} style={{ margin: "12px 0", gap: "10px" }}>
-                      <div className={styles.spinner}></div>
+                    <div className={styles.typingBubble}>
+                      <span className={styles.typingDot}></span>
+                      <span className={styles.typingDot}></span>
+                      <span className={styles.typingDot}></span>
                     </div>
                   )}
 
@@ -637,6 +652,55 @@ function DashboardContent() {
                     <p style={{ color: "var(--color-error)", fontSize: "14px", margin: "4px 0" }}>
                       {turn.error}
                     </p>
+                  )}
+
+                  {/* Conversational Text Intro Bubble */}
+                  {turn.conversationalText && !turn.isLoading && (
+                    <div style={{
+                      fontSize: "14.5px",
+                      lineHeight: 1.5,
+                      color: "var(--color-on-surface)",
+                      background: "var(--color-surface)",
+                      border: "1px solid var(--color-outline-variant)",
+                      borderRadius: "16px",
+                      borderTopLeftRadius: "4px",
+                      padding: "14px 18px",
+                      maxWidth: "85%",
+                      margin: "0 0 8px 0",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.03)"
+                    }}>
+                      {turn.conversationalText}
+                    </div>
+                  )}
+
+                  {/* Platform Selection Chips for General Topic Entry */}
+                  {turn.intent === 'platform_select' && !turn.isLoading && isLatestTurn && (
+                    <div className={styles.aiActionChipsRow} style={{ marginTop: "4px" }}>
+                      <button
+                        className={styles.aiActionChip}
+                        onClick={() => handleGeneratePost(turn.userPrompt, 'LinkedIn', `Craft a LinkedIn post on "${turn.userPrompt}"`)}
+                      >
+                        💼 LinkedIn Post
+                      </button>
+                      <button
+                        className={styles.aiActionChip}
+                        onClick={() => handleGeneratePost(turn.userPrompt, 'X', `Create an X / Twitter thread on "${turn.userPrompt}"`)}
+                      >
+                        🧵 X / Twitter Thread
+                      </button>
+                      <button
+                        className={styles.aiActionChip}
+                        onClick={() => handleGeneratePost(turn.userPrompt, 'Instagram', `Draft an Instagram caption for "${turn.userPrompt}"`)}
+                      >
+                        📸 Instagram Caption
+                      </button>
+                      <button
+                        className={styles.aiActionChip}
+                        onClick={() => handleGeneratePost(turn.userPrompt, 'TikTok', `Write a TikTok script on "${turn.userPrompt}"`)}
+                      >
+                        🎵 TikTok Script
+                      </button>
+                    </div>
                   )}
 
                   {/* Ideas Output */}
@@ -768,12 +832,29 @@ function DashboardContent() {
                         width: "100%",
                         boxSizing: "border-box"
                       }}>
-                        <h3 style={{ fontSize: "18px", fontWeight: 700, margin: "0 0 8px", color: "var(--color-on-surface)" }}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px" }}>
+                          <span style={{
+                            padding: "4px 12px",
+                            borderRadius: "100px",
+                            background: "color-mix(in srgb, #ec4899 15%, transparent)",
+                            color: "#db2777",
+                            fontSize: "12px",
+                            fontWeight: 700,
+                            letterSpacing: "0.03em",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "5px"
+                          }}>
+                            📚 EBOOK
+                          </span>
+                          <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--color-primary)" }}>
+                            Est. Price: ${turn.product.monetization_price_suggestion}
+                          </span>
+                        </div>
+
+                        <h3 style={{ fontSize: "18px", fontWeight: 700, margin: "0 0 12px", color: "var(--color-on-surface)" }}>
                           {turn.product.title}
                         </h3>
-                        <p style={{ fontSize: "14px", color: "var(--color-on-surface-variant)", margin: "0 0 16px" }}>
-                          Suggested Price: <strong style={{ color: "var(--color-primary)" }}>${turn.product.monetization_price_suggestion}</strong>
-                        </p>
                         
                         {/* Chapters / Structure */}
                         {turn.product.content_structure && (
