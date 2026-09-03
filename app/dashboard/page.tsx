@@ -57,11 +57,12 @@ function DashboardContent() {
     id: string;
     userPrompt: string;
     timestamp: number;
-    intent: 'ideas' | 'post' | 'product' | 'refinement';
+    intent: 'ideas' | 'post' | 'product' | 'refinement' | 'chat';
     ideas?: Idea[];
     post?: Post;
     product?: Product;
     platform?: string;
+    assistantText?: string;
     isLoading?: boolean;
     error?: string | null;
   }
@@ -147,6 +148,12 @@ function DashboardContent() {
   }, [searchParams]);
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [publishedProductId, setPublishedProductId] = useState<string | null>(null);
+  const [previewProduct, setPreviewProduct] = useState<Product | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
+  const [editContentText, setEditContentText] = useState('');
+  const [refinePromptText, setRefinePromptText] = useState('');
+  const [isSavingProduct, setIsSavingProduct] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -311,6 +318,50 @@ function DashboardContent() {
     return <div style={{ color: "var(--color-on-surface-variant)", padding: "2rem", textAlign: "center" }}>Loading...</div>;
   }
 
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [turns, isGenerating, isCrafting, isProductizing]);
+
+  const handleGenerateIdeas = async (topicPrompt: string) => {
+    if (!topicPrompt.trim() || !userId) return;
+
+    const turnId = `turn_${Date.now()}`;
+    setTurns(prev => [
+      ...prev,
+      {
+        id: turnId,
+        userPrompt: topicPrompt,
+        timestamp: Date.now(),
+        intent: 'ideas',
+        isLoading: true
+      }
+    ]);
+    setNiche('');
+    setIsDockedBottom(true);
+    setIsGenerating(true);
+
+    try {
+      const res = await fetch('/api/agent/idea-architect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ niche: topicPrompt, category: selectedCategory })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || 'Failed to generate ideas');
+
+      const newIdeas = data.output?.ideas || [];
+      setIdeas(newIdeas);
+      setTurns(prev => prev.map(t => t.id === turnId ? { ...t, isLoading: false, ideas: newIdeas } : t));
+      window.dispatchEvent(new Event("refresh-ideas"));
+    } catch (err: any) {
+      setTurns(prev => prev.map(t => t.id === turnId ? { ...t, isLoading: false, error: err.message } : t));
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   const handleGeneratePost = async (topicText: string, platform: string = "LinkedIn", customPromptText?: string) => {
     if (!topicText.trim() || !userId) return;
 
@@ -408,24 +459,59 @@ function DashboardContent() {
     }
   };
 
-  const handleSubmitMessage = () => {
-    const prompt = niche.trim();
-    if (!prompt) return;
+  const handleSubmitMessage = async (customPrompt?: string) => {
+    const promptText = (customPrompt || niche).trim();
+    if (!promptText || !userId || isGenerating) return;
 
-    const lower = prompt.toLowerCase();
-    const isProductReq = lower.includes("ebook") || lower.includes("product") || lower.includes("lead magnet") || lower.includes("checklist") || lower.includes("course");
+    const turnId = `turn_${Date.now()}`;
+    setTurns(prev => [
+      ...prev,
+      {
+        id: turnId,
+        userPrompt: promptText,
+        timestamp: Date.now(),
+        intent: 'ideas',
+        isLoading: true
+      }
+    ]);
 
-    const latestPost = Object.values(posts).reverse()[0];
+    setNiche('');
+    setIsDockedBottom(true);
+    setIsGenerating(true);
 
-    if (isProductReq && (latestPost || activePostId)) {
-      const targetPostId = latestPost?.post_id || activePostId || "latest";
-      handleProductize(targetPostId, "ebook", prompt);
-    } else {
-      let platform = "LinkedIn";
-      if (lower.includes("x") || lower.includes("twitter") || lower.includes("thread")) platform = "X";
-      if (lower.includes("instagram") || lower.includes("ig")) platform = "Instagram";
-      if (lower.includes("tiktok")) platform = "TikTok";
-      handleGeneratePost(prompt, platform);
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: promptText, post_id: activePostId })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || 'Failed to process request');
+
+      setTurns(prev => prev.map(t => {
+        if (t.id === turnId) {
+          return {
+            ...t,
+            isLoading: false,
+            intent: data.intent,
+            ideas: data.intent === 'ideas' ? data.payload : undefined,
+            post: data.intent === 'post' ? data.payload : undefined,
+            product: data.intent === 'product' ? data.payload : undefined,
+            assistantText: data.message_text
+          };
+        }
+        return t;
+      }));
+
+      if (data.intent === 'post' && data.payload?.post_id) {
+        setActivePostId(data.payload.post_id);
+      }
+
+      window.dispatchEvent(new Event("refresh-ideas"));
+    } catch (err: any) {
+      setTurns(prev => prev.map(t => t.id === turnId ? { ...t, isLoading: false, error: err.message } : t));
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -474,7 +560,7 @@ function DashboardContent() {
               <div className={styles.commandInputRight}>
                 <button
                   className={styles.sendBtn}
-                  onClick={handleSubmitMessage}
+                  onClick={() => handleSubmitMessage()}
                   disabled={!niche.trim() || isGenerating || isCrafting || !!isProductizing}
                   title="Send Prompt"
                 >
@@ -485,6 +571,39 @@ function DashboardContent() {
           </div>
         </div>
     );
+  };
+
+  const renderFormattedEbookContent = (rawText: string) => {
+    if (!rawText) return null;
+    const blocks = rawText.split(/\n\s*\n/);
+    return blocks.map((block, idx) => {
+      const trimmed = block.trim();
+      if (!trimmed) return null;
+
+      if (trimmed.startsWith('##')) {
+        return (
+          <h2 key={idx} style={{ fontSize: "20px", fontWeight: 800, margin: "28px 0 14px", color: "var(--color-on-surface)", borderBottom: "1px solid var(--color-outline-variant)", paddingBottom: "8px" }}>
+            {trimmed.replace(/^##\s*/, '')}
+          </h2>
+        );
+      }
+      if (trimmed.startsWith('---')) {
+        return <hr key={idx} style={{ border: "none", borderTop: "1px solid var(--color-outline-variant)", margin: "32px 0" }} />;
+      }
+      if (trimmed.startsWith('**Key Takeaways') || trimmed.startsWith('**Action Steps')) {
+        return (
+          <h4 key={idx} style={{ fontSize: "15px", fontWeight: 700, color: "var(--color-primary)", margin: "20px 0 10px" }}>
+            {trimmed.replace(/\*\*/g, '')}
+          </h4>
+        );
+      }
+
+      return (
+        <p key={idx} style={{ fontSize: "15px", lineHeight: 1.75, margin: "0 0 18px", color: "var(--color-on-surface)", maxWidth: "70ch" }}>
+          {trimmed}
+        </p>
+      );
+    });
   };
 
   return (
@@ -625,10 +744,12 @@ function DashboardContent() {
 
                 {/* AI Response Block for this turn */}
                 <div className={styles.aiMsgRow}>
-                  {/* Loading Spinner */}
+                  {/* Loading: thinking bubble */}
                   {turn.isLoading && (
-                    <div className={styles.loader} style={{ margin: "12px 0", gap: "10px" }}>
-                      <div className={styles.spinner}></div>
+                    <div className={styles.thinkingBubble} aria-label="Generating">
+                      <span className={styles.thinkingDot}></span>
+                      <span className={styles.thinkingDot}></span>
+                      <span className={styles.thinkingDot}></span>
                     </div>
                   )}
 
@@ -637,6 +758,20 @@ function DashboardContent() {
                     <p style={{ color: "var(--color-error)", fontSize: "14px", margin: "4px 0" }}>
                       {turn.error}
                     </p>
+                  )}
+
+                  {/* Conversational Text Response */}
+                  {turn.assistantText && !turn.isLoading && (
+                    <div style={{
+                      fontSize: "14.5px",
+                      lineHeight: "1.6",
+                      color: "var(--color-on-surface)",
+                      whiteSpace: "pre-wrap",
+                      width: "100%",
+                      margin: "2px 0 8px"
+                    }}>
+                      {turn.assistantText}
+                    </div>
                   )}
 
                   {/* Ideas Output */}
@@ -712,7 +847,7 @@ function DashboardContent() {
                       </p>
                       <PostResult
                         post={turn.post}
-                        product={products[turn.post.post_id]}
+                        product={undefined}
                         activePostId={activePostId}
                         isProductizing={isProductizing}
                         onToggleProductize={(id) => setActivePostId(activePostId === id ? null : id)}
@@ -757,7 +892,7 @@ function DashboardContent() {
                   {turn.product && !turn.isLoading && (
                     <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: "12px" }}>
                       <p style={{ fontSize: "14px", fontWeight: 500, color: "var(--color-on-surface-variant)", margin: "0 0 4px" }}>
-                        Here is your generated digital product outline ({turn.product.product_type || "ebook"}):
+                        Here is your full-length digital {turn.product.product_type || "ebook"}:
                       </p>
 
                       <div style={{
@@ -784,7 +919,19 @@ function DashboardContent() {
                           </div>
                         )}
 
-                        <div style={{ marginTop: "16px", display: "flex", gap: "10px" }}>
+                        <div style={{ marginTop: "16px", display: "flex", flexWrap: "wrap", gap: "10px" }}>
+                          <button
+                            className={styles.secondaryBtn}
+                            onClick={() => {
+                              const prod = turn.product!;
+                              setPreviewProduct(prod);
+                              setEditTitle(prod.title);
+                              setEditContentText(typeof prod.content_structure === 'string' ? prod.content_structure : JSON.stringify(prod.content_structure, null, 2));
+                              setIsEditMode(false);
+                            }}
+                          >
+                            👁️ Preview & Edit Full Ebook
+                          </button>
                           <button
                             className={styles.primaryBtn}
                             onClick={() => handlePublish(turn.product!.product_id)}
@@ -817,12 +964,177 @@ function DashboardContent() {
               </React.Fragment>
             );
           })}
+            <div ref={messagesEndRef} />
           </div>
         )}
       </div>
 
       {/* Sticky bottom input when docked OR when ideas are active - stretches 100% to screen edges */}
       {(isDockedBottom || ideas.length > 0) && !isGenerating && renderCommandInput(true)}
+
+      {previewProduct && (
+        <div className={styles.modalOverlay} onClick={() => setPreviewProduct(null)}>
+          <div
+            className={styles.modalCard}
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: "800px", width: "94%", maxHeight: "88vh", display: "flex", flexDirection: "column", padding: "28px" }}
+          >
+            {/* Modal Header */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+              <div>
+                <span style={{ fontSize: "11px", fontWeight: 800, color: "var(--color-primary)", textTransform: "uppercase", letterSpacing: "0.8px" }}>
+                  {previewProduct.product_type} Previewer & Editor
+                </span>
+                <h2 style={{ fontSize: "20px", fontWeight: 700, margin: "4px 0 0", color: "var(--color-on-surface)" }}>
+                  {isEditMode ? "Edit Ebook Title & Content" : previewProduct.title}
+                </h2>
+              </div>
+
+              <div style={{ display: "flex", gap: "8px" }}>
+                <button
+                  className={isEditMode ? styles.primaryBtn : styles.secondaryBtn}
+                  onClick={() => setIsEditMode(!isEditMode)}
+                  style={{ height: "36px", fontSize: "13px" }}
+                >
+                  {isEditMode ? "📖 Reader View" : "✏️ Manual Edit Mode"}
+                </button>
+                <button
+                  className={styles.secondaryBtn}
+                  onClick={() => setPreviewProduct(null)}
+                  style={{ height: "36px", padding: "0 12px" }}
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body: Reader or Edit Mode */}
+            <div style={{ flex: 1, overflowY: "auto", paddingRight: "4px", margin: "12px 0 20px" }}>
+              {isEditMode ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                  <div>
+                    <label style={{ fontSize: "12px", fontWeight: 700, color: "var(--color-on-surface-variant)" }}>Ebook Title</label>
+                    <input
+                      type="text"
+                      className={styles.commandInput}
+                      style={{ width: "100%", padding: "10px 14px", marginTop: "6px" }}
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: "12px", fontWeight: 700, color: "var(--color-on-surface-variant)" }}>Full Content Text & Chapters</label>
+                    <textarea
+                      className={styles.commandInput}
+                      style={{
+                        width: "100%",
+                        minHeight: "320px",
+                        padding: "14px",
+                        marginTop: "6px",
+                        fontFamily: "inherit",
+                        fontSize: "14px",
+                        lineHeight: 1.6,
+                        resize: "vertical"
+                      }}
+                      value={editContentText}
+                      onChange={(e) => setEditContentText(e.target.value)}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div style={{
+                  background: "var(--color-surface-variant)",
+                  borderRadius: "14px",
+                  padding: "28px 32px",
+                  color: "var(--color-on-surface)",
+                  boxSizing: "border-box"
+                }}>
+                  {renderFormattedEbookContent(
+                    editContentText || (typeof previewProduct.content_structure === 'string' ? previewProduct.content_structure : JSON.stringify(previewProduct.content_structure, null, 2))
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* AI Refinement Bar inside Modal */}
+            <div style={{ borderTop: "1px solid var(--color-outline-variant)", paddingTop: "16px" }}>
+              <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
+                <input
+                  type="text"
+                  className={styles.commandInput}
+                  style={{ flex: 1, padding: "10px 16px", fontSize: "13.5px" }}
+                  placeholder="Ask AI to refine (e.g. 'Add 2 case studies to Chapter 1' or 'Make Chapter 3 punchier')..."
+                  value={refinePromptText}
+                  onChange={(e) => setRefinePromptText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && refinePromptText.trim() && !isGenerating) {
+                      const p = refinePromptText.trim();
+                      setRefinePromptText('');
+                      handleSubmitMessage(`Refine ebook "${previewProduct.title}": ${p}`);
+                    }
+                  }}
+                />
+                <button
+                  className={styles.secondaryBtn}
+                  onClick={() => {
+                    if (refinePromptText.trim() && !isGenerating) {
+                      const p = refinePromptText.trim();
+                      setRefinePromptText('');
+                      handleSubmitMessage(`Refine ebook "${previewProduct.title}": ${p}`);
+                    }
+                  }}
+                  disabled={!refinePromptText.trim() || isGenerating}
+                >
+                  ✨ AI Refine
+                </button>
+              </div>
+
+              {/* Action Buttons */}
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+                {isEditMode && (
+                  <button
+                    className={styles.primaryBtn}
+                    onClick={async () => {
+                      setIsSavingProduct(true);
+                      try {
+                        await fetch('/api/products', {
+                          method: 'PUT',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            product_id: previewProduct.product_id,
+                            title: editTitle,
+                            content_structure: editContentText,
+                            full_content: editContentText
+                          })
+                        });
+                        setPreviewProduct(prev => prev ? { ...prev, title: editTitle, content_structure: editContentText } : null);
+                        setIsEditMode(false);
+                      } catch (e) {
+                        console.error(e);
+                      } finally {
+                        setIsSavingProduct(false);
+                      }
+                    }}
+                    disabled={isSavingProduct}
+                  >
+                    {isSavingProduct ? "Saving..." : "💾 Save Edits"}
+                  </button>
+                )}
+                <button
+                  className={styles.primaryBtn}
+                  onClick={() => {
+                    handlePublish(previewProduct.product_id);
+                    setPreviewProduct(null);
+                  }}
+                >
+                  🚀 Save & Publish Product
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showPublishModal && (
         <div className={styles.modalOverlay} onClick={() => { setShowPublishModal(false); setPublishedProductId(null); }}>

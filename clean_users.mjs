@@ -25,8 +25,12 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  console.log("Cleaning up all test user data from the database...");
+  console.log("Wiping all users and related data from the database...");
 
+  const deletedTransactions = await prisma.transaction.deleteMany({});
+  const deletedTracking = await prisma.monetizationTracking.deleteMany({});
+  const deletedSubscriptions = await prisma.subscription.deleteMany({});
+  const deletedUsage = await prisma.usageRecord.deleteMany({});
   const deletedTokens = await prisma.verificationToken.deleteMany({});
   const deletedAccounts = await prisma.account.deleteMany({});
   const deletedSessions = await prisma.session.deleteMany({});
@@ -36,15 +40,23 @@ async function main() {
   const deletedUsers = await prisma.user.deleteMany({});
 
   console.log(`Database cleanup completed successfully!`);
-  console.log(`- Deleted Users: ${deletedUsers.count}`);
-  console.log(`- Deleted Ideas: ${deletedIdeas.count}`);
-  console.log(`- Deleted Posts: ${deletedPosts.count}`);
+  console.log(`- Deleted Transactions: ${deletedTransactions.count}`);
+  console.log(`- Deleted MonetizationTracking: ${deletedTracking.count}`);
+  console.log(`- Deleted Subscriptions: ${deletedSubscriptions.count}`);
+  console.log(`- Deleted UsageRecords: ${deletedUsage.count}`);
+  console.log(`- Deleted VerificationTokens: ${deletedTokens.count}`);
+  console.log(`- Deleted Accounts: ${deletedAccounts.count}`);
+  console.log(`- Deleted Sessions: ${deletedSessions.count}`);
   console.log(`- Deleted Products: ${deletedProducts.count}`);
+  console.log(`- Deleted Posts: ${deletedPosts.count}`);
+  console.log(`- Deleted Ideas: ${deletedIdeas.count}`);
+  console.log(`- Deleted Users: ${deletedUsers.count}`);
 }
 
 main()
   .catch((err) => {
     console.error("Error cleaning database:", err);
+    process.exitCode = 1;
   })
   .finally(async () => {
     await prisma.$disconnect();

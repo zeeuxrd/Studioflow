@@ -214,20 +214,20 @@ export default function AnalyticsPage() {
   const recentActivityEvents = events.slice(0, 5);
 
   return (
-    <div className={dashStyles.libraryWrapper}>
+    <div className={`${dashStyles.libraryWrapper} ${styles.analyticsPage}`} style={{ textAlign: "left", paddingTop: "88px", paddingLeft: "16px", paddingRight: "16px" }}>
       {/* Redesigned Header with actions matching reference */}
-      <header className={dashStyles.libraryHeader}>
-        <div className={dashStyles.libraryTitleSec}>
-          <h1 className={dashStyles.libraryTitle} style={{ margin: 0, lineHeight: 1.2, marginBottom: 2 }}>Revenue & Analytics</h1>
-          <p className={dashStyles.librarySubtitle} style={{ margin: 0 }}>
-            <span className={dashStyles.desktopSubtitle}>Monitor your digital product sales, creations, and creator metrics</span>
-            <span className={dashStyles.mobileSubtitle}>Track sales & metrics</span>
+      <header className={`${dashStyles.libraryHeader} ${styles.analyticsHeader}`} style={{ textAlign: "left", alignItems: "flex-start", width: "100%", position: "relative", zIndex: 5, marginTop: "12px", marginBottom: "8px" }}>
+        <div className={dashStyles.libraryTitleSec} style={{ textAlign: "left", alignItems: "flex-start", width: "100%", padding: 0, margin: 0 }}>
+          <h1 className={dashStyles.libraryTitle} style={{ margin: "0 0 4px 0", padding: 0, lineHeight: 1.2, textAlign: "left", width: "100%", fontSize: "24px", color: "var(--color-on-surface)" }}>Revenue & Analytics</h1>
+          <p className={dashStyles.librarySubtitle} style={{ margin: 0, padding: 0, textAlign: "left", width: "100%" }}>
+            <span className={dashStyles.desktopSubtitle} style={{ textAlign: "left" }}>Monitor your digital product sales, creations, and creator metrics</span>
+            <span className={dashStyles.mobileSubtitle} style={{ textAlign: "left" }}>Track sales & metrics</span>
           </p>
         </div>
 
-        <div className={dashStyles.libraryControls}>
+        <div className={`${dashStyles.libraryControls} ${styles.analyticsControls}`} style={{ textAlign: "left", alignItems: "flex-start", width: "100%" }}>
           {/* Search bar inside header */}
-          <div className={dashStyles.librarySearchWrap}>
+          <div className={`${dashStyles.librarySearchWrap} ${styles.analyticsSearch}`}>
             <Search size={16} />
             <input 
               type="text" 
@@ -239,7 +239,7 @@ export default function AnalyticsPage() {
           </div>
 
           {/* Time range selector dropdown matching reference */}
-          <div style={{ position: "relative" }}>
+          <div className={styles.analyticsTimeWrap} style={{ position: "relative" }}>
             <button
               className={dashStyles.libraryTab}
               onClick={() => setShowTimeDropdown(!showTimeDropdown)}

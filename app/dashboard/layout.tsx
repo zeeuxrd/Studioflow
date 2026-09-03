@@ -24,6 +24,7 @@ import {
   Check
 } from "lucide-react";
 import styles from "./dashboard.module.css";
+import lpStyles from "../page.module.css";
 import UsageBadge from '@/components/dashboard/UsageBadge';
 
 const NAV_ITEMS = [
@@ -282,16 +283,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Main Workspace (Middle) */}
       <main className={styles.mainWorkspace}>
-        <button
-          className={styles.mobileMenuBtn}
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          aria-label="Toggle menu"
-        >
-          {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
-        </button>
-
         {/* Global Solid Top Bar */}
         <div className={styles.topBar}>
+          <button
+            className={styles.mobileMenuBtn}
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle menu"
+          >
+            {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+          </button>
+
           <div className={styles.topActions}>
             <button 
               className={styles.upgradeBtn}
@@ -322,40 +323,47 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {upgradeModalOpen && (
         <div className={styles.modalOverlay} onClick={() => setUpgradeModalOpen(false)}>
           <div 
-            className={styles.modalCard} 
+            className={`${styles.modalCard} ${styles.upgradeModalCard}`} 
             style={{ 
               maxWidth: 980, 
               width: "95%", 
               maxHeight: "90vh", 
               overflowY: "auto", 
               padding: "36px 28px", 
-              borderRadius: 24 
+              borderRadius: 24,
+              position: "relative"
             }} 
             onClick={(e) => e.stopPropagation()}
           >
+            {/* Close (top-right of modal card) */}
+            <button
+              onClick={() => setUpgradeModalOpen(false)}
+              aria-label="Close"
+              style={{
+                position: "absolute",
+                top: 12,
+                right: 12,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 32,
+                height: 32,
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+                color: "var(--color-on-surface-variant)",
+                borderRadius: "50%",
+                transition: "background 0.15s ease"
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = "var(--color-surface-variant)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+            >
+              <X size={20} />
+            </button>
             {/* Modal Header */}
-            <div style={{ textAlign: "center", marginBottom: 28, position: "relative" }}>
-              <button
-                onClick={() => setUpgradeModalOpen(false)}
-                style={{
-                  position: "absolute",
-                  top: -12,
-                  right: -12,
-                  background: "transparent",
-                  border: "none",
-                  cursor: "pointer",
-                  color: "var(--color-on-surface-variant)"
-                }}
-              >
-                <X size={24} />
-              </button>
-
-              <h2 style={{ fontSize: 28, fontWeight: 700, margin: "0 0 8px", color: "var(--color-on-surface)" }}>
-                Flexible plans for every creator
-              </h2>
-              <p style={{ fontSize: 15, color: "var(--color-on-surface-variant)", margin: "0 0 20px" }}>
-                Start creating AI-driven posts & digital products today. Cancel anytime.
-              </p>
+            <div style={{ textAlign: "center", marginBottom: 28, paddingTop: 24 }}>
+              <h2 className={styles.upgradeModalTitle} style={{ fontSize: "clamp(20px, 5.2vw, 28px)", fontWeight: 700, margin: "0 0 8px", color: "var(--color-on-surface)", lineHeight: 1.25 }}>Flexible plans for every creator</h2>
+              <p className={styles.upgradeModalDesc} style={{ fontSize: "clamp(11.5px, 3.2vw, 15px)", color: "var(--color-on-surface-variant)", margin: "0 0 20px", lineHeight: 1.4 }}>Start creating AI-driven posts &amp; digital products today. Cancel anytime.</p>
 
               {/* Monthly / Yearly Toggle */}
               <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "var(--color-surface-variant)", padding: 4, borderRadius: 100 }}>
@@ -389,133 +397,125 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     cursor: "pointer"
                   }}
                 >
-                  Yearly <span style={{ fontSize: 10, background: "rgba(255,255,255,0.2)", padding: "2px 6px", borderRadius: 8, marginLeft: 4 }}>20% OFF</span>
+                  Yearly
                 </button>
               </div>
             </div>
 
             {/* Pricing Cards Grid (All 3 Plans) */}
-            <div className={styles.modalDesktopGrid} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 20 }}>
+            <div className={styles.modalDesktopGrid} style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }}>
               {/* Starter */}
-              <div style={{
-                background: "var(--color-surface)",
-                border: "1px solid var(--color-outline)",
-                borderRadius: 20,
-                padding: 24,
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between"
-              }}>
-                <div>
-                  <h3 style={{ fontSize: 20, fontWeight: 700, margin: "0 0 6px", color: "var(--color-on-surface)" }}>Starter</h3>
-                  <p style={{ fontSize: 13, color: "var(--color-on-surface-variant)", margin: "0 0 16px" }}>
+              <div className={`${lpStyles.pricingCardStandard} ${styles.modalPricingCard}`}>
+                <div className={lpStyles.pricingCardHeader}>
+                  <h3 className={lpStyles.pricingCardTitle}>Starter</h3>
+                  <p className={lpStyles.pricingCardDesc}>
                     Perfect for solo creators starting their content journey.
                   </p>
-                  <div style={{ fontSize: 28, fontWeight: 800, color: "var(--color-on-surface)", marginBottom: 16 }}>
-                    &#8358;{billingPeriod === "monthly" ? "7,000" : "20,000"}
-                    <span style={{ fontSize: 12, fontWeight: 400, color: "var(--color-on-surface-variant)" }}>/{billingPeriod === "monthly" ? "mo" : "yr"}</span>
+                  <div className={lpStyles.pricingPriceRow}>
+                    <span className={lpStyles.pricingPrice}>
+                      &#8358;{billingPeriod === "monthly" ? "7,000" : "20,000"}
+                    </span>
+                    <div className={lpStyles.pricingPeriodCol}>
+                      <span className={lpStyles.pricingPeriod}>{billingPeriod === "monthly" ? "monthly" : "yearly"}</span>
+                      <span className={lpStyles.pricingBilledPeriod}>{billingPeriod === "yearly" ? "billed annually" : "billed monthly"}</span>
+                    </div>
                   </div>
-                  <ul style={{ listStyle: "none", padding: 0, margin: "0 0 20px", fontSize: 13, display: "flex", flexDirection: "column", gap: 10 }}>
-                    <li style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--color-on-surface)" }}><Check size={16} color="var(--color-primary)" /> 50 AI content generations/mo</li>
-                    <li style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--color-on-surface)" }}><Check size={16} color="var(--color-primary)" /> 2 platform integrations</li>
-                    <li style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--color-on-surface)" }}><Check size={16} color="var(--color-primary)" /> Basic analytics</li>
-                    <li style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--color-on-surface)" }}><Check size={16} color="var(--color-primary)" /> Idea Architect tool</li>
-                  </ul>
+                  <button
+                    type="button"
+                    className={`${lpStyles.pricingCardButton} ${lpStyles.pricingCardButtonOutline}`}
+                    onClick={() => handleSubscribePlan("starter")}
+                    disabled={subscribing === "starter"}
+                    style={{ cursor: "pointer", fontFamily: "inherit" }}
+                  >
+                    {subscribing === "starter" ? "Redirecting..." : "Choose Starter"}
+                  </button>
                 </div>
-                <button
-                  className={styles.secondaryBtn}
-                  onClick={() => handleSubscribePlan("starter")}
-                  disabled={subscribing === "starter"}
-                >
-                  {subscribing === "starter" ? "Redirecting..." : "Choose Starter"}
-                </button>
+
+                <div className={lpStyles.pricingCardDivider}></div>
+
+                <ul className={lpStyles.pricingFeaturesList}>
+                  <li className={lpStyles.pricingFeatureItem}><Check className={lpStyles.pricingCheckmark} size={20} /> 50 AI content generations/mo</li>
+                  <li className={lpStyles.pricingFeatureItem}><Check className={lpStyles.pricingCheckmark} size={20} /> 2 platform integrations</li>
+                  <li className={lpStyles.pricingFeatureItem}><Check className={lpStyles.pricingCheckmark} size={20} /> Basic analytics</li>
+                  <li className={lpStyles.pricingFeatureItem}><Check className={lpStyles.pricingCheckmark} size={20} /> Idea Architect tool</li>
+                  <li className={lpStyles.pricingFeatureItem}><Check className={lpStyles.pricingCheckmark} size={20} /> Email support</li>
+                </ul>
               </div>
 
-              {/* Creator (Featured Popular) */}
-              <div style={{
-                background: "color-mix(in srgb, var(--color-primary) 10%, var(--color-surface))",
-                border: "2px solid var(--color-primary)",
-                borderRadius: 20,
-                padding: 24,
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-                position: "relative"
-              }}>
-                <span style={{
-                  position: "absolute",
-                  top: -12,
-                  left: "50%",
-                  transform: "translateX(-50%)",
-                  background: "var(--color-primary)",
-                  color: "var(--color-on-primary)",
-                  fontSize: 10,
-                  fontWeight: 800,
-                  letterSpacing: "0.8px",
-                  padding: "4px 12px",
-                  borderRadius: 100
-                }}>MOST POPULAR</span>
-
-                <div>
-                  <h3 style={{ fontSize: 20, fontWeight: 700, margin: "8px 0 6px", color: "var(--color-on-surface)" }}>Creator</h3>
-                  <p style={{ fontSize: 13, color: "var(--color-on-surface-variant)", margin: "0 0 16px" }}>
+              {/* Creator */}
+              <div className={`${lpStyles.pricingCardStandard} ${styles.modalPricingCard}`}>
+                <div className={lpStyles.pricingCardHeader}>
+                  <h3 className={lpStyles.pricingCardTitle}>Creator</h3>
+                  <p className={lpStyles.pricingCardDesc}>
                     For growing creators ready to scale their content output.
                   </p>
-                  <div style={{ fontSize: 28, fontWeight: 800, color: "var(--color-primary)", marginBottom: 16 }}>
-                    &#8358;{billingPeriod === "monthly" ? "14,000" : "50,000"}
-                    <span style={{ fontSize: 12, fontWeight: 400, color: "var(--color-on-surface-variant)" }}>/{billingPeriod === "monthly" ? "mo" : "yr"}</span>
+                  <div className={lpStyles.pricingPriceRow}>
+                    <span className={lpStyles.pricingPrice}>
+                      &#8358;{billingPeriod === "monthly" ? "14,000" : "50,000"}
+                    </span>
+                    <div className={lpStyles.pricingPeriodCol}>
+                      <span className={lpStyles.pricingPeriod}>{billingPeriod === "monthly" ? "monthly" : "yearly"}</span>
+                      <span className={lpStyles.pricingBilledPeriod}>{billingPeriod === "yearly" ? "billed annually" : "billed monthly"}</span>
+                    </div>
                   </div>
-                  <ul style={{ listStyle: "none", padding: 0, margin: "0 0 20px", fontSize: 13, display: "flex", flexDirection: "column", gap: 10 }}>
-                    <li style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--color-on-surface)" }}><Check size={16} color="var(--color-primary)" /> 200 AI content generations/mo</li>
-                    <li style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--color-on-surface)" }}><Check size={16} color="var(--color-primary)" /> All platform integrations</li>
-                    <li style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--color-on-surface)" }}><Check size={16} color="var(--color-primary)" /> Advanced analytics</li>
-                    <li style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--color-on-surface)" }}><Check size={16} color="var(--color-primary)" /> Content Crafter + Product Generator</li>
-                    <li style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--color-on-surface)" }}><Check size={16} color="var(--color-primary)" /> Priority support</li>
-                  </ul>
+                  <button
+                    type="button"
+                    className={`${lpStyles.pricingCardButton} ${lpStyles.pricingCardButtonOutline}`}
+                    onClick={() => handleSubscribePlan("creator")}
+                    disabled={subscribing === "creator"}
+                    style={{ cursor: "pointer", fontFamily: "inherit" }}
+                  >
+                    {subscribing === "creator" ? "Redirecting..." : "Upgrade to Creator"}
+                  </button>
                 </div>
-                <button
-                  className={styles.primaryBtn}
-                  onClick={() => handleSubscribePlan("creator")}
-                  disabled={subscribing === "creator"}
-                >
-                  {subscribing === "creator" ? "Redirecting..." : "Upgrade to Creator"}
-                </button>
+
+                <div className={lpStyles.pricingCardDivider}></div>
+
+                <ul className={lpStyles.pricingFeaturesList}>
+                  <li className={lpStyles.pricingFeatureItem}><Check className={lpStyles.pricingCheckmark} size={20} /> 200 AI content generations/mo</li>
+                  <li className={lpStyles.pricingFeatureItem}><Check className={lpStyles.pricingCheckmark} size={20} /> All platform integrations</li>
+                  <li className={lpStyles.pricingFeatureItem}><Check className={lpStyles.pricingCheckmark} size={20} /> Advanced analytics</li>
+                  <li className={lpStyles.pricingFeatureItem}><Check className={lpStyles.pricingCheckmark} size={20} /> Content Crafter + Product Generator</li>
+                  <li className={lpStyles.pricingFeatureItem}><Check className={lpStyles.pricingCheckmark} size={20} /> Priority support</li>
+                </ul>
               </div>
 
               {/* Pro */}
-              <div style={{
-                background: "var(--color-surface)",
-                border: "1px solid var(--color-outline)",
-                borderRadius: 20,
-                padding: 24,
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between"
-              }}>
-                <div>
-                  <h3 style={{ fontSize: 20, fontWeight: 700, margin: "0 0 6px", color: "var(--color-on-surface)" }}>Pro</h3>
-                  <p style={{ fontSize: 13, color: "var(--color-on-surface-variant)", margin: "0 0 16px" }}>
-                    For teams & agencies managing multiple client accounts.
+              <div className={`${lpStyles.pricingCardStandard} ${styles.modalPricingCard}`}>
+                <div className={lpStyles.pricingCardHeader}>
+                  <h3 className={lpStyles.pricingCardTitle}>Pro</h3>
+                  <p className={lpStyles.pricingCardDesc}>
+                    For teams &amp; agencies managing multiple client accounts.
                   </p>
-                  <div style={{ fontSize: 28, fontWeight: 800, color: "var(--color-on-surface)", marginBottom: 16 }}>
-                    &#8358;{billingPeriod === "monthly" ? "30,000" : "100,000"}
-                    <span style={{ fontSize: 12, fontWeight: 400, color: "var(--color-on-surface-variant)" }}>/{billingPeriod === "monthly" ? "mo" : "yr"}</span>
+                  <div className={lpStyles.pricingPriceRow}>
+                    <span className={lpStyles.pricingPrice}>
+                      &#8358;{billingPeriod === "monthly" ? "30,000" : "100,000"}
+                    </span>
+                    <div className={lpStyles.pricingPeriodCol}>
+                      <span className={lpStyles.pricingPeriod}>{billingPeriod === "monthly" ? "monthly" : "yearly"}</span>
+                      <span className={lpStyles.pricingBilledPeriod}>{billingPeriod === "yearly" ? "billed annually" : "billed monthly"}</span>
+                    </div>
                   </div>
-                  <ul style={{ listStyle: "none", padding: 0, margin: "0 0 20px", fontSize: 13, display: "flex", flexDirection: "column", gap: 10 }}>
-                    <li style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--color-on-surface)" }}><Check size={16} color="var(--color-primary)" /> Unlimited AI generations</li>
-                    <li style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--color-on-surface)" }}><Check size={16} color="var(--color-primary)" /> Multi-account management</li>
-                    <li style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--color-on-surface)" }}><Check size={16} color="var(--color-primary)" /> Custom branding & exports</li>
-                    <li style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--color-on-surface)" }}><Check size={16} color="var(--color-primary)" /> All AI agent tools</li>
-                    <li style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--color-on-surface)" }}><Check size={16} color="var(--color-primary)" /> Dedicated account manager</li>
-                  </ul>
+                  <button
+                    type="button"
+                    className={`${lpStyles.pricingCardButton} ${lpStyles.pricingCardButtonOutline}`}
+                    onClick={() => handleSubscribePlan("pro")}
+                    disabled={subscribing === "pro"}
+                    style={{ cursor: "pointer", fontFamily: "inherit" }}
+                  >
+                    {subscribing === "pro" ? "Redirecting..." : "Choose Pro"}
+                  </button>
                 </div>
-                <button
-                  className={styles.secondaryBtn}
-                  onClick={() => handleSubscribePlan("pro")}
-                  disabled={subscribing === "pro"}
-                >
-                  {subscribing === "pro" ? "Redirecting..." : "Choose Pro"}
-                </button>
+
+                <div className={lpStyles.pricingCardDivider}></div>
+
+                <ul className={lpStyles.pricingFeaturesList}>
+                  <li className={lpStyles.pricingFeatureItem}><Check className={lpStyles.pricingCheckmark} size={20} /> Unlimited AI generations</li>
+                  <li className={lpStyles.pricingFeatureItem}><Check className={lpStyles.pricingCheckmark} size={20} /> Multi-account management</li>
+                  <li className={lpStyles.pricingFeatureItem}><Check className={lpStyles.pricingCheckmark} size={20} /> Custom branding &amp; exports</li>
+                  <li className={lpStyles.pricingFeatureItem}><Check className={lpStyles.pricingCheckmark} size={20} /> All AI agent tools</li>
+                  <li className={lpStyles.pricingFeatureItem}><Check className={lpStyles.pricingCheckmark} size={20} /> Dedicated account manager</li>
+                </ul>
               </div>
             </div>
           </div>

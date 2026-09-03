@@ -31,30 +31,31 @@ function mapItems(arr: unknown[]): string[] {
 
 function renderStructure(structure: unknown): { label: string; items: string[] } {
   if (Array.isArray(structure)) {
-    return { label: 'What\u2019s Inside', items: mapItems(structure) };
-  }
+    const items = structure.map((item: any) => {
+      if (typeof item === 'string') return item;
+      return item.chapter_title || item.title || item.chapter || item.name || getStr(item, 'title', 'chapter');
+    }).filter(Boolean) as string[];
 
-  if (structure && typeof structure === 'object') {
-    const obj = structure as Obj;
-    for (const [key, label] of [['chapters', 'Chapters'], ['modules', 'Modules'], ['sections', 'Sections'], ['items', 'Includes']] as const) {
-      if (key in obj && Array.isArray(obj[key])) {
-        return { label, items: mapItems(obj[key] as unknown[]) };
-      }
-    }
-    const entries = Object.entries(obj);
-    if (entries.length > 0) {
-      return {
-        label: 'Structure',
-        items: entries.map(([k, v]) => `${k}${typeof v === 'string' ? `: ${v}` : ''}`)
-      };
+    if (items.length > 0) {
+      return { label: 'Table of Contents', items };
     }
   }
 
   if (typeof structure === 'string') {
-    return { label: 'What\u2019s Inside', items: [structure] };
+    // Extract only Chapter headings starting with ## or Chapter
+    const lines = structure.split('\n');
+    const chapterHeadings = lines
+      .filter(line => line.trim().startsWith('##') || /^chapter\s+\d+/i.test(line.trim()))
+      .map(line => line.replace(/^##\s*/, '').trim());
+
+    if (chapterHeadings.length > 0) {
+      return { label: 'Table of Contents', items: chapterHeadings };
+    }
+
+    return { label: 'Table of Contents', items: ['Full Multi-Chapter Ebook included upon download'] };
   }
 
-  return { label: 'What\u2019s Inside', items: [] };
+  return { label: 'Table of Contents', items: [] };
 }
 
 function capitalize(str: string): string {

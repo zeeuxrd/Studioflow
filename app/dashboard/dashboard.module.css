@@ -211,6 +211,46 @@
   margin-bottom: 16px;
 }
 
+/* Thinking / generating bubble */
+.thinkingBubble {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-outline-variant);
+  border-radius: 18px 18px 18px 4px;
+  padding: 13px 18px;
+  margin: 2px 0 8px;
+}
+
+.thinkingDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-on-surface-variant);
+  opacity: 0.4;
+  animation: thinkBounce 1.2s ease-in-out infinite;
+}
+
+.thinkingDot:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.thinkingDot:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes thinkBounce {
+  0%, 80%, 100% {
+    transform: translateY(0);
+    opacity: 0.35;
+  }
+  40% {
+    transform: translateY(-4px);
+    opacity: 0.9;
+  }
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -762,7 +802,6 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
-    padding-left: 48px;
   }
   .libraryTitle {
     font-size: clamp(18px, 5vw, 24px);
@@ -2010,10 +2049,6 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    position: fixed;
-    top: calc(16px + env(safe-area-inset-top, 0px));
-    left: 14px;
-    z-index: 25;
     width: 40px;
     height: 40px;
     border: 1px solid var(--color-outline);
@@ -2091,10 +2126,10 @@
     left: 0;
     right: 0;
     height: calc(88px + env(safe-area-inset-top, 0px));
-    padding: calc(22px + env(safe-area-inset-top, 0px)) 16px 8px 64px;
+    padding: calc(22px + env(safe-area-inset-top, 0px)) 16px 8px 16px;
     display: flex;
     align-items: center;
-    justify-content: flex-end;
+    justify-content: space-between;
     border-bottom: 1px solid var(--color-outline-variant);
     background-color: var(--color-background);
     z-index: 20;
@@ -2121,39 +2156,73 @@
   }
 
   .libraryWrapper {
-    padding: 24px 16px 32px;
+    padding: calc(88px + env(safe-area-inset-top, 0px)) 16px 32px !important;
   }
 
   .libraryHeader {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 16px;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
+    gap: 16px !important;
+    width: 100% !important;
+    text-align: left !important;
+    margin-top: 12px !important;
+    margin-bottom: 20px !important;
+    position: relative !important;
+    z-index: 5 !important;
   }
 
   .libraryTitleSec {
-    padding-top: 100px !important;
-    padding-left: 0;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    text-align: left !important;
+    width: 100% !important;
+  }
+
+  .libraryTitle {
+    text-align: left !important;
+    margin: 0 0 4px 0 !important;
+    font-size: clamp(16px, 4.1vw, 21.6px) !important;
+    line-height: 1.15 !important;
+    width: 100% !important;
+  }
+
+  .librarySubtitle {
+    text-align: left !important;
+    margin: 0 !important;
+    font-size: 11.7px !important;
+    line-height: 1.35 !important;
+    width: 100% !important;
   }
 
   .desktopSubtitle {
-    display: none;
+    display: none !important;
   }
 
   .mobileSubtitle {
-    display: inline;
+    display: inline !important;
+    text-align: left !important;
   }
 
   .libraryControls {
-    width: 100%;
-    flex-wrap: wrap;
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
   }
 
   .librarySearchWrap {
-    width: 100%;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
 
   .librarySearchInput {
-    width: 100%;
+    width: 100% !important;
   }
 
   .tableDesktopWrap {
@@ -2464,5 +2533,62 @@
     display: grid !important;
     grid-template-columns: 1fr !important;
     gap: 16px !important;
+  }
+}
+
+/* ── Products page mobile overrides (mirrors Analytics) ── */
+@media (max-width: 900px) {
+  .upgradeModalTitle {
+    margin-top: 21px !important;
+  }
+
+  .productsPage {
+    gap: 0 !important;
+    padding: calc(88px + env(safe-area-inset-top, 0px)) 16px 32px !important;
+  }
+
+  .productsHeader {
+    margin-top: 32px !important;
+    margin-bottom: 12px !important;
+  }
+
+  .productsPage .libraryControls {
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+
+  .productsPage .librarySearchWrap {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    width: auto !important;
+  }
+
+  .productsPage .productsCreateBtn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+    padding: 12px 16px !important;
+    white-space: nowrap !important;
+  }
+
+  .productsEmptyText {
+    font-size: 16px !important;
+  }
+}
+
+/* ── Upgrade modal pricing overrides ── */
+.modalPricingCard {
+  margin-top: 0 !important;
+  height: auto !important;
+}
+
+@media (min-width: 901px) {
+  .upgradeModalCard {
+    max-height: none !important;
+    overflow-y: visible !important;
   }
 }

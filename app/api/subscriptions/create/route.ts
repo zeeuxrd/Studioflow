@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth';
 import { initiateSubscription } from '@/lib/flutterwave';
 import { PLANS } from '@/lib/plans';
 import { unauthorized, badRequest } from '@/lib/api-error';
+import { enforceUserRateLimit } from '@/lib/auth-rate-limit';
 import { getBaseUrl } from '@/lib/utils';
 
 export async function POST(request: Request) {
@@ -12,6 +13,9 @@ export async function POST(request: Request) {
     if (!session?.user?.id) {
       return unauthorized();
     }
+
+    const burst = enforceUserRateLimit(session.user.id, 'checkout', 10, 60_000);
+    if (burst) return burst;
 
     const { plan, billing_period } = await request.json();
 

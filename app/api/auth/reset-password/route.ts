@@ -2,8 +2,12 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { badRequest } from "@/lib/api-error";
+import { enforceAuthRateLimit } from "@/lib/auth-rate-limit";
 
 export async function POST(req: Request) {
+  const blocked = enforceAuthRateLimit(req, "reset-password", 3, 60 * 60 * 1000);
+  if (blocked) return blocked;
+
   try {
     const { token, password } = await req.json();
 
