@@ -40,32 +40,34 @@ export default async function DownloadPage({ params }: Props) {
 
   function renderFullContent(content: unknown): React.ReactNode {
     if (!content) return null;
-    if (Array.isArray(content)) {
-      return (content as any[]).map((item, i) => {
-        const heading = item.chapter || item.module || item.item || item.section || item.title || `Section ${i + 1}`;
-        const body = item.content || item.description || item.lessons || '';
+    const str = typeof content === 'string' ? content : JSON.stringify(content, null, 2);
+    const blocks = str.split(/\n\s*\n/);
+    return blocks.map((block, idx) => {
+      const trimmed = block.trim();
+      if (!trimmed) return null;
+      if (trimmed.startsWith('##')) {
         return (
-          <div key={i} className={styles.sourceSection}>
-            <hr className={styles.divider} />
-            <h2 className={styles.sectionLabel} style={{ fontSize: 16, color: '#fff', marginBottom: 12 }}>{heading}</h2>
-            {typeof body === 'string' ? (
-              <div className={styles.sourcePost} style={{ whiteSpace: 'pre-wrap' }}>{body}</div>
-            ) : Array.isArray(body) ? (
-              body.map((lesson: any, j: number) => (
-                <div key={j} style={{ marginBottom: 16 }}>
-                  <h3 style={{ color: '#a88aed', fontSize: 14, marginBottom: 6 }}>{lesson.title || `Lesson ${j + 1}`}</h3>
-                  <div className={styles.sourcePost} style={{ whiteSpace: 'pre-wrap' }}>{lesson.content || lesson.description || ''}</div>
-                </div>
-              ))
-            ) : null}
-          </div>
+          <h2 key={idx} style={{ fontSize: '20px', fontWeight: 800, margin: '32px 0 14px', color: 'var(--color-on-surface, #fff)', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '8px' }}>
+            {trimmed.replace(/^##\s*/, '')}
+          </h2>
         );
-      });
-    }
-    if (typeof content === 'object') {
-      return <div className={styles.sourcePost} style={{ whiteSpace: 'pre-wrap' }}>{JSON.stringify(content, null, 2)}</div>;
-    }
-    return <div className={styles.sourcePost} style={{ whiteSpace: 'pre-wrap' }}>{String(content)}</div>;
+      }
+      if (trimmed.startsWith('---')) {
+        return <hr key={idx} style={{ border: 'none', borderTop: '1px solid rgba(255,255,255,0.1)', margin: '32px 0' }} />;
+      }
+      if (trimmed.startsWith('**Key Takeaways') || trimmed.startsWith('**Action Steps')) {
+        return (
+          <h4 key={idx} style={{ fontSize: '15px', fontWeight: 700, color: '#a88aed', margin: '24px 0 10px' }}>
+            {trimmed.replace(/\*\*/g, '')}
+          </h4>
+        );
+      }
+      return (
+        <p key={idx} style={{ fontSize: '15px', lineHeight: 1.8, margin: '0 0 18px', color: 'var(--color-on-surface, #e0e0e0)', maxWidth: '72ch' }}>
+          {trimmed}
+        </p>
+      );
+    });
   }
 
   return (

@@ -3,11 +3,10 @@ import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/lib/auth';
 import { checkGenerationLimit, incrementGenerationCount } from '@/lib/rate-limit';
+import { enforceUserRateLimit } from '@/lib/auth-rate-limit';
 import { unauthorized, rateLimited } from '@/lib/api-error';
-import { aiProvider } from '@/lib/services/aiProvider';
+import { aiService } from '@/lib/providers/deepseek-provider';
 import type { PlatformType } from '@prisma/client';
-
-import { isGreetingPrompt } from '@/lib/config/platforms';
 
 interface RefinementStep {
   instruction: string;
@@ -22,6 +21,9 @@ export async function POST(request: Request) {
     if (!session?.user?.id) {
       return unauthorized();
     }
+
+    const burst = enforceUserRateLimit(session.user.id, 'ai-generation', 10, 60_000);
+    if (burst) return burst;
 
     const limit = await checkGenerationLimit(session.user.id);
     if (!limit.allowed) {
@@ -112,15 +114,6 @@ export async function POST(request: Request) {
 
     const startTime = Date.now();
 
-    // Check for conversational greetings / inquiries
-    if (isGreetingPrompt(activeTopic || '')) {
-      return NextResponse.json({
-        is_chat: true,
-        conversational_text: `Hey! 👋 I'm your StudioFlow creator assistant. Tell me what topic you'd like to write about (e.g. "5 WFH productivity habits"), or ask me to create an ebook outline!`,
-        output: null
-      });
-    }
-
     let idea = null;
     if (idea_id) {
       idea = await prisma.contentIdea.findFirst({
@@ -153,16 +146,16 @@ export async function POST(request: Request) {
       styleInstruction = `Frame the post content strictly as a ${format_style}.`;
     }
 
-    const { object } = await aiProvider.generateObject({
-      system: `You are ContentCrafter, an elite social media ghostwriter and creator assistant. Your goal is to generate a platform-ready post from an idea text along with a warm 1-sentence ChatGPT style intro message. Output MUST be valid JSON matching the schema.`,
+    const { object } = await aiService.generateObject({
+      system: `You are ContentCrafter, an elite social media ghostwriter. Your goal is to generate a platform-ready post from an idea text. 
+      Adhere strictly to the requested platform type and tone. Output MUST be valid JSON matching the schema.`,
       prompt: `Idea: ${idea.idea_text}
 Tone: ${tone}
 Platform: ${platform_type}
 ${styleInstruction}
 
-Write a natural 1-sentence intro (conversational_text) and the full post body perfectly tailored for this platform. Format the post_body with proper line breaks and emojis.`,
+Write the full post body perfectly tailored for this platform. If it's X, use threads if needed. If it's LinkedIn, use professional hooks. Format the post_body with proper line breaks.`,
       schema: z.object({
-        conversational_text: z.string().describe('A warm, natural 1-sentence intro message introducing the generated post.'),
         platform_type: z.string(),
         post_body: z.string().describe('The full generated post content, formatted with line breaks and emojis where appropriate.'),
         engagement_prediction_score: z.number().min(0).max(1).describe('A score from 0.0 to 1.0 predicting engagement.')
@@ -184,8 +177,7 @@ Write a natural 1-sentence intro (conversational_text) and the full post body pe
     await incrementGenerationCount(session.user.id);
 
     return NextResponse.json({
-      output: { ...savedPost, conversational_text: object.conversational_text, refinement_history: [] },
-      conversational_text: object.conversational_text,
+      output: { ...savedPost, refinement_history: [] },
       next_step: {
         label: 'Turn into Digital Product',
         action: 'create_product'

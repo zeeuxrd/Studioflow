@@ -24,7 +24,7 @@ import {
   Check
 } from "lucide-react";
 import styles from "./dashboard.module.css";
-import landingStyles from "../page.module.css";
+import lpStyles from "../page.module.css";
 import UsageBadge from '@/components/dashboard/UsageBadge';
 
 const NAV_ITEMS = [
@@ -39,10 +39,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [chatsOpen, setChatsOpen] = useState(false);
   const [chats, setChats] = useState<any[]>([]);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const [billingPeriod, setBillingPeriod] = useState<"monthly" | "yearly">("monthly");
+  const [mobilePlanTab, setMobilePlanTab] = useState<"starter" | "creator">("creator");
   const [subscribing, setSubscribing] = useState<string | null>(null);
 
   const handleSubscribePlan = async (planKey: string) => {
@@ -281,16 +283,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Main Workspace (Middle) */}
       <main className={styles.mainWorkspace}>
-        <button
-          className={styles.mobileMenuBtn}
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          aria-label="Toggle menu"
-        >
-          {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
-        </button>
-
         {/* Global Solid Top Bar */}
         <div className={styles.topBar}>
+          <button
+            className={styles.mobileMenuBtn}
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle menu"
+          >
+            {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+          </button>
+
           <div className={styles.topActions}>
             <button 
               className={styles.upgradeBtn}
@@ -321,7 +323,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {upgradeModalOpen && (
         <div className={styles.modalOverlay} onClick={() => setUpgradeModalOpen(false)}>
           <div 
-            className={styles.modalCard} 
+            className={`${styles.modalCard} ${styles.upgradeModalCard}`} 
             style={{ 
               maxWidth: 980, 
               width: "95%", 
@@ -333,39 +335,35 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             }} 
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Top Right Circular Close X Button */}
+            {/* Close (top-right of modal card) */}
             <button
               onClick={() => setUpgradeModalOpen(false)}
-              aria-label="Close upgrade modal"
+              aria-label="Close"
               style={{
                 position: "absolute",
-                top: 18,
-                right: 20,
-                width: 36,
-                height: 36,
-                borderRadius: "50%",
-                background: "var(--color-surface-variant)",
-                border: "1px solid var(--color-outline-variant)",
+                top: 12,
+                right: 12,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
+                width: 32,
+                height: 32,
+                background: "transparent",
+                border: "none",
                 cursor: "pointer",
-                color: "var(--color-on-surface)",
-                transition: "all 0.2s ease",
-                zIndex: 10
+                color: "var(--color-on-surface-variant)",
+                borderRadius: "50%",
+                transition: "background 0.15s ease"
               }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = "var(--color-surface-variant)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
             >
-              <X size={18} />
+              <X size={20} />
             </button>
-
             {/* Modal Header */}
-            <div className={styles.modalHeaderBox}>
-              <h2 className={styles.modalHeaderTitle}>
-                Flexible plans for every creator
-              </h2>
-              <p className={styles.modalHeaderSub}>
-                Start creating AI-driven posts & digital products today. Cancel anytime.
-              </p>
+            <div style={{ textAlign: "center", marginBottom: 28, paddingTop: 24 }}>
+              <h2 className={styles.upgradeModalTitle} style={{ fontSize: "clamp(20px, 5.2vw, 28px)", fontWeight: 700, margin: "0 0 8px", color: "var(--color-on-surface)", lineHeight: 1.25 }}>Flexible plans for every creator</h2>
+              <p className={styles.upgradeModalDesc} style={{ fontSize: "clamp(11.5px, 3.2vw, 15px)", color: "var(--color-on-surface-variant)", margin: "0 0 20px", lineHeight: 1.4 }}>Start creating AI-driven posts &amp; digital products today. Cancel anytime.</p>
 
               {/* Monthly / Yearly Toggle */}
               <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "var(--color-surface-variant)", padding: 4, borderRadius: 100 }}>
@@ -376,8 +374,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     padding: "8px 20px",
                     borderRadius: 100,
                     border: "none",
-                    background: billingPeriod === "monthly" ? "#1a1a1a" : "transparent",
-                    color: billingPeriod === "monthly" ? "#ffffff" : "var(--color-on-surface-variant)",
+                    background: billingPeriod === "monthly" ? "var(--color-primary)" : "transparent",
+                    color: billingPeriod === "monthly" ? "var(--color-on-primary)" : "var(--color-on-surface-variant)",
                     fontWeight: 700,
                     fontSize: 13,
                     cursor: "pointer"
@@ -392,8 +390,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     padding: "8px 20px",
                     borderRadius: 100,
                     border: "none",
-                    background: billingPeriod === "yearly" ? "#1a1a1a" : "transparent",
-                    color: billingPeriod === "yearly" ? "#ffffff" : "var(--color-on-surface-variant)",
+                    background: billingPeriod === "yearly" ? "var(--color-primary)" : "transparent",
+                    color: billingPeriod === "yearly" ? "var(--color-on-primary)" : "var(--color-on-surface-variant)",
                     fontWeight: 700,
                     fontSize: 13,
                     cursor: "pointer"
@@ -404,172 +402,120 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </div>
             </div>
 
-            {/* Desktop & Mobile Pricing Cards Grid (Fluid Clamp Typography + Responsive Vertical Stacking) */}
-            <div className={styles.modalDesktopGrid} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "20px", width: "100%", alignItems: "stretch", marginTop: "12px" }}>
-              {/* Card 1: Starter */}
-              <div className={landingStyles.pricingCardStandard} style={{ margin: 0, height: "100%", padding: "2.2rem 1.6rem 1.6rem", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-                <div>
-                  <h3 className={`${landingStyles.pricingCardTitle} ${styles.clampTitle}`}>Starter</h3>
-                  <p className={`${landingStyles.pricingCardDesc} ${styles.clampDesc}`} style={{ minHeight: "40px" }}>
+            {/* Pricing Cards Grid (All 3 Plans) */}
+            <div className={styles.modalDesktopGrid} style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }}>
+              {/* Starter */}
+              <div className={`${lpStyles.pricingCardStandard} ${styles.modalPricingCard}`}>
+                <div className={lpStyles.pricingCardHeader}>
+                  <h3 className={lpStyles.pricingCardTitle}>Starter</h3>
+                  <p className={lpStyles.pricingCardDesc}>
                     Perfect for solo creators starting their content journey.
                   </p>
-                  <div className={landingStyles.pricingPriceRow} style={{ minHeight: "48px", marginBottom: "1.2rem" }}>
-                    <span className={`${landingStyles.pricingPrice} ${styles.clampPrice}`}>
+                  <div className={lpStyles.pricingPriceRow}>
+                    <span className={lpStyles.pricingPrice}>
                       &#8358;{billingPeriod === "monthly" ? "7,000" : "20,000"}
                     </span>
-                    <div className={landingStyles.pricingPeriodCol}>
-                      <span className={landingStyles.pricingPeriod}>monthly</span>
-                      <span className={landingStyles.pricingBilledPeriod}>billed {billingPeriod === "monthly" ? "monthly" : "annually"}</span>
+                    <div className={lpStyles.pricingPeriodCol}>
+                      <span className={lpStyles.pricingPeriod}>{billingPeriod === "monthly" ? "monthly" : "yearly"}</span>
+                      <span className={lpStyles.pricingBilledPeriod}>{billingPeriod === "yearly" ? "billed annually" : "billed monthly"}</span>
                     </div>
                   </div>
                   <button
                     type="button"
-                    className={`${landingStyles.pricingCardButton} ${landingStyles.pricingCardButtonOutline}`}
+                    className={`${lpStyles.pricingCardButton} ${lpStyles.pricingCardButtonOutline}`}
                     onClick={() => handleSubscribePlan("starter")}
                     disabled={subscribing === "starter"}
-                    style={{ cursor: 'pointer', fontFamily: 'inherit', width: "100%" }}
+                    style={{ cursor: "pointer", fontFamily: "inherit" }}
                   >
                     {subscribing === "starter" ? "Redirecting..." : "Choose Starter"}
                   </button>
                 </div>
-                
-                <div>
-                  <div className={landingStyles.pricingCardDivider} style={{ margin: "1.5rem 0 1.2rem" }}></div>
-                  <ul className={landingStyles.pricingFeaturesList} style={{ margin: 0 }}>
-                    <li className={`${landingStyles.pricingFeatureItem} ${styles.clampFeature}`}>
-                      <Check className={landingStyles.pricingCheckmark} size={20} />
-                      50 AI content generations/mo
-                    </li>
-                    <li className={`${landingStyles.pricingFeatureItem} ${styles.clampFeature}`}>
-                      <Check className={landingStyles.pricingCheckmark} size={20} />
-                      2 platform integrations
-                    </li>
-                    <li className={`${landingStyles.pricingFeatureItem} ${styles.clampFeature}`}>
-                      <Check className={landingStyles.pricingCheckmark} size={20} />
-                      Basic analytics
-                    </li>
-                    <li className={`${landingStyles.pricingFeatureItem} ${styles.clampFeature}`}>
-                      <Check className={landingStyles.pricingCheckmark} size={20} />
-                      Idea Architect tool
-                    </li>
-                    <li className={`${landingStyles.pricingFeatureItem} ${styles.clampFeature}`}>
-                      <Check className={landingStyles.pricingCheckmark} size={20} />
-                      Email support
-                    </li>
-                  </ul>
-                </div>
+
+                <div className={lpStyles.pricingCardDivider}></div>
+
+                <ul className={lpStyles.pricingFeaturesList}>
+                  <li className={lpStyles.pricingFeatureItem}><Check className={lpStyles.pricingCheckmark} size={20} /> 50 AI content generations/mo</li>
+                  <li className={lpStyles.pricingFeatureItem}><Check className={lpStyles.pricingCheckmark} size={20} /> 2 platform integrations</li>
+                  <li className={lpStyles.pricingFeatureItem}><Check className={lpStyles.pricingCheckmark} size={20} /> Basic analytics</li>
+                  <li className={lpStyles.pricingFeatureItem}><Check className={lpStyles.pricingCheckmark} size={20} /> Idea Architect tool</li>
+                  <li className={lpStyles.pricingFeatureItem}><Check className={lpStyles.pricingCheckmark} size={20} /> Email support</li>
+                </ul>
               </div>
 
-              {/* Card 2: Creator (Featured Popular) */}
-              <div className={landingStyles.pricingCardStandard} style={{ margin: 0, height: "100%", padding: "2.2rem 1.6rem 1.6rem", display: "flex", flexDirection: "column", justifyContent: "space-between", position: "relative", border: "2px solid var(--color-primary)", backgroundColor: "color-mix(in srgb, var(--color-primary) 8%, var(--color-surface))" }}>
-                <span className={styles.mostPopularBadge}>
-                  MOST POPULAR
-                </span>
-
-                <div>
-                  <h3 className={`${landingStyles.pricingCardTitle} ${styles.clampTitle}`}>Creator</h3>
-                  <p className={`${landingStyles.pricingCardDesc} ${styles.clampDesc}`} style={{ minHeight: "40px" }}>
+              {/* Creator */}
+              <div className={`${lpStyles.pricingCardStandard} ${styles.modalPricingCard}`}>
+                <div className={lpStyles.pricingCardHeader}>
+                  <h3 className={lpStyles.pricingCardTitle}>Creator</h3>
+                  <p className={lpStyles.pricingCardDesc}>
                     For growing creators ready to scale their content output.
                   </p>
-                  <div className={landingStyles.pricingPriceRow} style={{ minHeight: "48px", marginBottom: "1.2rem" }}>
-                    <span className={`${landingStyles.pricingPrice} ${styles.clampPrice}`} style={{ color: "var(--color-primary)" }}>
+                  <div className={lpStyles.pricingPriceRow}>
+                    <span className={lpStyles.pricingPrice}>
                       &#8358;{billingPeriod === "monthly" ? "14,000" : "50,000"}
                     </span>
-                    <div className={landingStyles.pricingPeriodCol}>
-                      <span className={landingStyles.pricingPeriod}>monthly</span>
-                      <span className={landingStyles.pricingBilledPeriod}>billed {billingPeriod === "monthly" ? "monthly" : "annually"}</span>
+                    <div className={lpStyles.pricingPeriodCol}>
+                      <span className={lpStyles.pricingPeriod}>{billingPeriod === "monthly" ? "monthly" : "yearly"}</span>
+                      <span className={lpStyles.pricingBilledPeriod}>{billingPeriod === "yearly" ? "billed annually" : "billed monthly"}</span>
                     </div>
                   </div>
                   <button
                     type="button"
-                    className={`${landingStyles.pricingCardButton} ${landingStyles.pricingCardButtonPrimary}`}
+                    className={`${lpStyles.pricingCardButton} ${lpStyles.pricingCardButtonOutline}`}
                     onClick={() => handleSubscribePlan("creator")}
                     disabled={subscribing === "creator"}
-                    style={{ cursor: 'pointer', fontFamily: 'inherit', width: "100%" }}
+                    style={{ cursor: "pointer", fontFamily: "inherit" }}
                   >
                     {subscribing === "creator" ? "Redirecting..." : "Upgrade to Creator"}
                   </button>
                 </div>
-                
-                <div>
-                  <div className={landingStyles.pricingCardDivider} style={{ margin: "1.5rem 0 1.2rem" }}></div>
-                  <ul className={landingStyles.pricingFeaturesList} style={{ margin: 0 }}>
-                    <li className={`${landingStyles.pricingFeatureItem} ${styles.clampFeature}`}>
-                      <Check className={landingStyles.pricingCheckmark} size={20} />
-                      200 AI content generations/mo
-                    </li>
-                    <li className={`${landingStyles.pricingFeatureItem} ${styles.clampFeature}`}>
-                      <Check className={landingStyles.pricingCheckmark} size={20} />
-                      All platform integrations
-                    </li>
-                    <li className={`${landingStyles.pricingFeatureItem} ${styles.clampFeature}`}>
-                      <Check className={landingStyles.pricingCheckmark} size={20} />
-                      Advanced analytics
-                    </li>
-                    <li className={`${landingStyles.pricingFeatureItem} ${styles.clampFeature}`}>
-                      <Check className={landingStyles.pricingCheckmark} size={20} />
-                      Content Crafter + Product Generator
-                    </li>
-                    <li className={`${landingStyles.pricingFeatureItem} ${styles.clampFeature}`}>
-                      <Check className={landingStyles.pricingCheckmark} size={20} />
-                      Priority support
-                    </li>
-                  </ul>
-                </div>
+
+                <div className={lpStyles.pricingCardDivider}></div>
+
+                <ul className={lpStyles.pricingFeaturesList}>
+                  <li className={lpStyles.pricingFeatureItem}><Check className={lpStyles.pricingCheckmark} size={20} /> 200 AI content generations/mo</li>
+                  <li className={lpStyles.pricingFeatureItem}><Check className={lpStyles.pricingCheckmark} size={20} /> All platform integrations</li>
+                  <li className={lpStyles.pricingFeatureItem}><Check className={lpStyles.pricingCheckmark} size={20} /> Advanced analytics</li>
+                  <li className={lpStyles.pricingFeatureItem}><Check className={lpStyles.pricingCheckmark} size={20} /> Content Crafter + Product Generator</li>
+                  <li className={lpStyles.pricingFeatureItem}><Check className={lpStyles.pricingCheckmark} size={20} /> Priority support</li>
+                </ul>
               </div>
 
-              {/* Card 3: Pro (Hidden on Mobile) */}
-              <div className={`${landingStyles.pricingCardStandard} ${styles.hideOnMobile}`} style={{ margin: 0, height: "100%", padding: "2.2rem 1.6rem 1.6rem", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-                <div>
-                  <h3 className={`${landingStyles.pricingCardTitle} ${styles.clampTitle}`}>Pro</h3>
-                  <p className={`${landingStyles.pricingCardDesc} ${styles.clampDesc}`} style={{ minHeight: "40px" }}>
-                    For teams & agencies managing multiple client accounts.
+              {/* Pro */}
+              <div className={`${lpStyles.pricingCardStandard} ${styles.modalPricingCard}`}>
+                <div className={lpStyles.pricingCardHeader}>
+                  <h3 className={lpStyles.pricingCardTitle}>Pro</h3>
+                  <p className={lpStyles.pricingCardDesc}>
+                    For teams &amp; agencies managing multiple client accounts.
                   </p>
-                  <div className={landingStyles.pricingPriceRow} style={{ minHeight: "48px", marginBottom: "1.2rem" }}>
-                    <span className={`${landingStyles.pricingPrice} ${styles.clampPrice}`}>
+                  <div className={lpStyles.pricingPriceRow}>
+                    <span className={lpStyles.pricingPrice}>
                       &#8358;{billingPeriod === "monthly" ? "30,000" : "100,000"}
                     </span>
-                    <div className={landingStyles.pricingPeriodCol}>
-                      <span className={landingStyles.pricingPeriod}>monthly</span>
-                      <span className={landingStyles.pricingBilledPeriod}>billed {billingPeriod === "monthly" ? "monthly" : "annually"}</span>
+                    <div className={lpStyles.pricingPeriodCol}>
+                      <span className={lpStyles.pricingPeriod}>{billingPeriod === "monthly" ? "monthly" : "yearly"}</span>
+                      <span className={lpStyles.pricingBilledPeriod}>{billingPeriod === "yearly" ? "billed annually" : "billed monthly"}</span>
                     </div>
                   </div>
                   <button
                     type="button"
-                    className={`${landingStyles.pricingCardButton} ${landingStyles.pricingCardButtonOutline}`}
+                    className={`${lpStyles.pricingCardButton} ${lpStyles.pricingCardButtonOutline}`}
                     onClick={() => handleSubscribePlan("pro")}
                     disabled={subscribing === "pro"}
-                    style={{ cursor: 'pointer', fontFamily: 'inherit', width: "100%" }}
+                    style={{ cursor: "pointer", fontFamily: "inherit" }}
                   >
                     {subscribing === "pro" ? "Redirecting..." : "Choose Pro"}
                   </button>
                 </div>
-                
-                <div>
-                  <div className={landingStyles.pricingCardDivider} style={{ margin: "1.5rem 0 1.2rem" }}></div>
-                  <ul className={landingStyles.pricingFeaturesList} style={{ margin: 0 }}>
-                    <li className={`${landingStyles.pricingFeatureItem} ${styles.clampFeature}`}>
-                      <Check className={landingStyles.pricingCheckmark} size={20} />
-                      Unlimited AI generations
-                    </li>
-                    <li className={`${landingStyles.pricingFeatureItem} ${styles.clampFeature}`}>
-                      <Check className={landingStyles.pricingCheckmark} size={20} />
-                      Multi-account management
-                    </li>
-                    <li className={`${landingStyles.pricingFeatureItem} ${styles.clampFeature}`}>
-                      <Check className={landingStyles.pricingCheckmark} size={20} />
-                      Custom branding & exports
-                    </li>
-                    <li className={`${landingStyles.pricingFeatureItem} ${styles.clampFeature}`}>
-                      <Check className={landingStyles.pricingCheckmark} size={20} />
-                      All AI agent tools
-                    </li>
-                    <li className={`${landingStyles.pricingFeatureItem} ${styles.clampFeature}`}>
-                      <Check className={landingStyles.pricingCheckmark} size={20} />
-                      Dedicated account manager
-                    </li>
-                  </ul>
-                </div>
+
+                <div className={lpStyles.pricingCardDivider}></div>
+
+                <ul className={lpStyles.pricingFeaturesList}>
+                  <li className={lpStyles.pricingFeatureItem}><Check className={lpStyles.pricingCheckmark} size={20} /> Unlimited AI generations</li>
+                  <li className={lpStyles.pricingFeatureItem}><Check className={lpStyles.pricingCheckmark} size={20} /> Multi-account management</li>
+                  <li className={lpStyles.pricingFeatureItem}><Check className={lpStyles.pricingCheckmark} size={20} /> Custom branding &amp; exports</li>
+                  <li className={lpStyles.pricingFeatureItem}><Check className={lpStyles.pricingCheckmark} size={20} /> All AI agent tools</li>
+                  <li className={lpStyles.pricingFeatureItem}><Check className={lpStyles.pricingCheckmark} size={20} /> Dedicated account manager</li>
+                </ul>
               </div>
             </div>
           </div>

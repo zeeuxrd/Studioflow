@@ -3,8 +3,12 @@ import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
 import { badRequest } from "@/lib/api-error";
 import { getBaseUrl } from "@/lib/utils";
+import { enforceAuthRateLimit } from "@/lib/auth-rate-limit";
 
 export async function POST(req: Request) {
+  const blocked = enforceAuthRateLimit(req, "forgot-password", 3, 60 * 60 * 1000);
+  if (blocked) return blocked;
+
   try {
     const { email } = await req.json();
 

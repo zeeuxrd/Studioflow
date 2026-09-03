@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/lib/auth';
 import { checkGenerationLimit, incrementGenerationCount } from '@/lib/rate-limit';
+import { enforceUserRateLimit } from '@/lib/auth-rate-limit';
 import { unauthorized, rateLimited } from '@/lib/api-error';
 import { aiService } from '@/lib/providers/deepseek-provider';
 
@@ -12,6 +13,9 @@ export async function POST(request: Request) {
     if (!session?.user?.id) {
       return unauthorized();
     }
+
+    const burst = enforceUserRateLimit(session.user.id, 'ai-generation', 10, 60_000);
+    if (burst) return burst;
 
     const limit = await checkGenerationLimit(session.user.id);
     if (!limit.allowed) {

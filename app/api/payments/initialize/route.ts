@@ -2,10 +2,14 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { initializePayment } from '@/lib/flutterwave';
 import { badRequest } from '@/lib/api-error';
+import { enforceAuthRateLimit } from '@/lib/auth-rate-limit';
 import { getBaseUrl } from '@/lib/utils';
 
 export async function POST(request: Request) {
   try {
+    const burst = enforceAuthRateLimit(request, 'checkout-product', 10, 60_000);
+    if (burst) return burst;
+
     const { product_id, buyer_email } = await request.json();
 
     if (!product_id || !buyer_email) {

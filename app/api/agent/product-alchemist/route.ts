@@ -3,8 +3,9 @@ import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/lib/auth';
 import { checkGenerationLimit, incrementGenerationCount } from '@/lib/rate-limit';
+import { enforceUserRateLimit } from '@/lib/auth-rate-limit';
 import { unauthorized, rateLimited } from '@/lib/api-error';
-import { aiProvider } from '@/lib/services/aiProvider';
+import { aiService } from '@/lib/providers/deepseek-provider';
 import type { ProductType, ProductStatus } from '@prisma/client';
 
 interface RefinementStep {
@@ -22,6 +23,9 @@ export async function POST(request: Request) {
     if (!session?.user?.id) {
       return unauthorized();
     }
+
+    const burst = enforceUserRateLimit(session.user.id, 'ai-generation', 10, 60_000);
+    if (burst) return burst;
 
     const limit = await checkGenerationLimit(session.user.id);
     if (!limit.allowed) {
@@ -128,8 +132,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Post not found" }, { status: 404 });
     }
 
-    // Use AI Provider to generate the product structure
-    const { object } = await aiProvider.generateObject({
+    // Use DeepSeek to generate the product structure
+    const { object } = await aiService.generateObject({
       system: `You are ProductAlchemist, an expert digital product creator and monetization strategist.
       Your goal is to turn a high-performing social media post into a complete, fully-written digital product.
       Output MUST be valid JSON matching the schema.`,

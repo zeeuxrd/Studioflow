@@ -6,12 +6,18 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { 
   Sparkles, 
-  Send 
+  Send, 
+  HelpCircle, 
+  Zap,
+  Sun,
+  Moon,
+  CheckCircle,
+  MessageSquarePlus,
+  MoreVertical
 } from 'lucide-react';
-import type { Idea, Post, Product, ChatTurn } from "@/components/dashboard/types";
+import type { Idea, Post, Product } from "@/components/dashboard/types";
 import IdeaCard from "@/components/dashboard/IdeaCard";
 import PostResult from "@/components/dashboard/PostResult";
-import { isGreetingPrompt, detectPlatformFromPrompt } from "@/lib/config/platforms";
 import styles from './dashboard.module.css';
 
 export default function DashboardPage() {
@@ -22,8 +28,8 @@ function DashboardContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const userId = session?.user?.id ?? null;
-  const userName = (session?.user?.name || 'Creator').trim();
-  const firstName = userName.split(' ')[0] || 'Creator';
+  const userName = session?.user?.name ?? 'Creator';
+  const firstName = userName.split(' ')[0];
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -47,6 +53,20 @@ function DashboardContent() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [styleMenuOpen, setStyleMenuOpen] = useState(false);
   
+  interface ChatTurn {
+    id: string;
+    userPrompt: string;
+    timestamp: number;
+    intent: 'ideas' | 'post' | 'product' | 'refinement' | 'chat';
+    ideas?: Idea[];
+    post?: Post;
+    product?: Product;
+    platform?: string;
+    assistantText?: string;
+    isLoading?: boolean;
+    error?: string | null;
+  }
+
   const [turns, setTurns] = useState<ChatTurn[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [ideas, setIdeas] = useState<Idea[]>([]);
@@ -128,6 +148,12 @@ function DashboardContent() {
   }, [searchParams]);
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [publishedProductId, setPublishedProductId] = useState<string | null>(null);
+  const [previewProduct, setPreviewProduct] = useState<Product | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
+  const [editContentText, setEditContentText] = useState('');
+  const [refinePromptText, setRefinePromptText] = useState('');
+  const [isSavingProduct, setIsSavingProduct] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -197,7 +223,7 @@ function DashboardContent() {
 
       const promptText = chat.idea?.idea_text || chat.content_body || chat.idea?.niche || "";
       if (promptText) {
-        setTurns([{ id: `turn_${Date.now()}`, prompt: promptText, timestamp: Date.now(), type: 'initial' }]);
+        setTurns([{ id: `turn_${Date.now()}`, userPrompt: promptText, timestamp: Date.now(), intent: 'ideas' }]);
       }
 
       setIdeas([parentIdea]);
@@ -292,6 +318,50 @@ function DashboardContent() {
     return <div style={{ color: "var(--color-on-surface-variant)", padding: "2rem", textAlign: "center" }}>Loading...</div>;
   }
 
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [turns, isGenerating, isCrafting, isProductizing]);
+
+  const handleGenerateIdeas = async (topicPrompt: string) => {
+    if (!topicPrompt.trim() || !userId) return;
+
+    const turnId = `turn_${Date.now()}`;
+    setTurns(prev => [
+      ...prev,
+      {
+        id: turnId,
+        userPrompt: topicPrompt,
+        timestamp: Date.now(),
+        intent: 'ideas',
+        isLoading: true
+      }
+    ]);
+    setNiche('');
+    setIsDockedBottom(true);
+    setIsGenerating(true);
+
+    try {
+      const res = await fetch('/api/agent/idea-architect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ niche: topicPrompt, category: selectedCategory })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || 'Failed to generate ideas');
+
+      const newIdeas = data.output?.ideas || [];
+      setIdeas(newIdeas);
+      setTurns(prev => prev.map(t => t.id === turnId ? { ...t, isLoading: false, ideas: newIdeas } : t));
+      window.dispatchEvent(new Event("refresh-ideas"));
+    } catch (err: any) {
+      setTurns(prev => prev.map(t => t.id === turnId ? { ...t, isLoading: false, error: err.message } : t));
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   const handleGeneratePost = async (topicText: string, platform: string = "LinkedIn", customPromptText?: string) => {
     if (!topicText.trim() || !userId) return;
 
@@ -321,23 +391,9 @@ function DashboardContent() {
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || 'Failed to generate post');
 
-      if (data.is_chat) {
-        setTurns(prev => prev.map(t => t.id === turnId ? {
-          ...t,
-          isLoading: false,
-          isChat: true,
-          conversationalText: data.conversational_text
-        } : t));
-      } else {
-        setPosts(prev => ({ ...prev, [data.output.post_id || turnId]: data.output }));
-        setTurns(prev => prev.map(t => t.id === turnId ? {
-          ...t,
-          isLoading: false,
-          post: data.output,
-          conversationalText: data.conversational_text
-        } : t));
-        window.dispatchEvent(new Event("refresh-ideas"));
-      }
+      setPosts(prev => ({ ...prev, [data.output.post_id || turnId]: data.output }));
+      setTurns(prev => prev.map(t => t.id === turnId ? { ...t, isLoading: false, post: data.output } : t));
+      window.dispatchEvent(new Event("refresh-ideas"));
     } catch (err: any) {
       setTurns(prev => prev.map(t => t.id === turnId ? { ...t, isLoading: false, error: err.message } : t));
     } finally {
@@ -403,42 +459,59 @@ function DashboardContent() {
     }
   };
 
-  const handleSubmitMessage = () => {
-    const prompt = niche.trim();
-    if (!prompt) return;
+  const handleSubmitMessage = async (customPrompt?: string) => {
+    const promptText = (customPrompt || niche).trim();
+    if (!promptText || !userId || isGenerating) return;
 
-    if (isGreetingPrompt(prompt)) {
-      handleGeneratePost(prompt, "LinkedIn");
-      return;
-    }
+    const turnId = `turn_${Date.now()}`;
+    setTurns(prev => [
+      ...prev,
+      {
+        id: turnId,
+        userPrompt: promptText,
+        timestamp: Date.now(),
+        intent: 'ideas',
+        isLoading: true
+      }
+    ]);
 
-    const detectedPlatform = detectPlatformFromPrompt(prompt);
-    const lower = prompt.toLowerCase();
-    const isProductReq = lower.includes("ebook") || lower.includes("product") || lower.includes("lead magnet") || lower.includes("checklist") || lower.includes("course");
+    setNiche('');
+    setIsDockedBottom(true);
+    setIsGenerating(true);
 
-    const latestPost = Object.values(posts).reverse()[0];
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: promptText, post_id: activePostId })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || 'Failed to process request');
 
-    if (isProductReq && (latestPost || activePostId)) {
-      const targetPostId = latestPost?.post_id || activePostId || "latest";
-      handleProductize(targetPostId, "ebook", prompt);
-    } else if (detectedPlatform) {
-      handleGeneratePost(prompt, detectedPlatform);
-    } else {
-      // General topic without platform specified -> Present platform selection chips!
-      const turnId = `turn_${Date.now()}`;
-      setTurns(prev => [
-        ...prev,
-        {
-          id: turnId,
-          userPrompt: prompt,
-          timestamp: Date.now(),
-          intent: 'platform_select',
-          conversationalText: `Great topic! Which platform would you like to create content for?`,
-          isLoading: false
+      setTurns(prev => prev.map(t => {
+        if (t.id === turnId) {
+          return {
+            ...t,
+            isLoading: false,
+            intent: data.intent,
+            ideas: data.intent === 'ideas' ? data.payload : undefined,
+            post: data.intent === 'post' ? data.payload : undefined,
+            product: data.intent === 'product' ? data.payload : undefined,
+            assistantText: data.message_text
+          };
         }
-      ]);
-      setNiche('');
-      setIsDockedBottom(true);
+        return t;
+      }));
+
+      if (data.intent === 'post' && data.payload?.post_id) {
+        setActivePostId(data.payload.post_id);
+      }
+
+      window.dispatchEvent(new Event("refresh-ideas"));
+    } catch (err: any) {
+      setTurns(prev => prev.map(t => t.id === turnId ? { ...t, isLoading: false, error: err.message } : t));
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -487,7 +560,7 @@ function DashboardContent() {
               <div className={styles.commandInputRight}>
                 <button
                   className={styles.sendBtn}
-                  onClick={handleSubmitMessage}
+                  onClick={() => handleSubmitMessage()}
                   disabled={!niche.trim() || isGenerating || isCrafting || !!isProductizing}
                   title="Send Prompt"
                 >
@@ -498,6 +571,39 @@ function DashboardContent() {
           </div>
         </div>
     );
+  };
+
+  const renderFormattedEbookContent = (rawText: string) => {
+    if (!rawText) return null;
+    const blocks = rawText.split(/\n\s*\n/);
+    return blocks.map((block, idx) => {
+      const trimmed = block.trim();
+      if (!trimmed) return null;
+
+      if (trimmed.startsWith('##')) {
+        return (
+          <h2 key={idx} style={{ fontSize: "20px", fontWeight: 800, margin: "28px 0 14px", color: "var(--color-on-surface)", borderBottom: "1px solid var(--color-outline-variant)", paddingBottom: "8px" }}>
+            {trimmed.replace(/^##\s*/, '')}
+          </h2>
+        );
+      }
+      if (trimmed.startsWith('---')) {
+        return <hr key={idx} style={{ border: "none", borderTop: "1px solid var(--color-outline-variant)", margin: "32px 0" }} />;
+      }
+      if (trimmed.startsWith('**Key Takeaways') || trimmed.startsWith('**Action Steps')) {
+        return (
+          <h4 key={idx} style={{ fontSize: "15px", fontWeight: 700, color: "var(--color-primary)", margin: "20px 0 10px" }}>
+            {trimmed.replace(/\*\*/g, '')}
+          </h4>
+        );
+      }
+
+      return (
+        <p key={idx} style={{ fontSize: "15px", lineHeight: 1.75, margin: "0 0 18px", color: "var(--color-on-surface)", maxWidth: "70ch" }}>
+          {trimmed}
+        </p>
+      );
+    });
   };
 
   return (
@@ -638,12 +744,12 @@ function DashboardContent() {
 
                 {/* AI Response Block for this turn */}
                 <div className={styles.aiMsgRow}>
-                  {/* Animated Typing Bubble Indicator */}
+                  {/* Loading: thinking bubble */}
                   {turn.isLoading && (
-                    <div className={styles.typingBubble}>
-                      <span className={styles.typingDot}></span>
-                      <span className={styles.typingDot}></span>
-                      <span className={styles.typingDot}></span>
+                    <div className={styles.thinkingBubble} aria-label="Generating">
+                      <span className={styles.thinkingDot}></span>
+                      <span className={styles.thinkingDot}></span>
+                      <span className={styles.thinkingDot}></span>
                     </div>
                   )}
 
@@ -654,52 +760,17 @@ function DashboardContent() {
                     </p>
                   )}
 
-                  {/* Conversational Text Intro Bubble */}
-                  {turn.conversationalText && !turn.isLoading && (
+                  {/* Conversational Text Response */}
+                  {turn.assistantText && !turn.isLoading && (
                     <div style={{
                       fontSize: "14.5px",
-                      lineHeight: 1.5,
+                      lineHeight: "1.6",
                       color: "var(--color-on-surface)",
-                      background: "var(--color-surface)",
-                      border: "1px solid var(--color-outline-variant)",
-                      borderRadius: "16px",
-                      borderTopLeftRadius: "4px",
-                      padding: "14px 18px",
-                      maxWidth: "85%",
-                      margin: "0 0 8px 0",
-                      boxShadow: "0 2px 8px rgba(0,0,0,0.03)"
+                      whiteSpace: "pre-wrap",
+                      width: "100%",
+                      margin: "2px 0 8px"
                     }}>
-                      {turn.conversationalText}
-                    </div>
-                  )}
-
-                  {/* Platform Selection Chips for General Topic Entry */}
-                  {turn.intent === 'platform_select' && !turn.isLoading && isLatestTurn && (
-                    <div className={styles.aiActionChipsRow} style={{ marginTop: "4px" }}>
-                      <button
-                        className={styles.aiActionChip}
-                        onClick={() => handleGeneratePost(turn.userPrompt, 'LinkedIn', `Craft a LinkedIn post on "${turn.userPrompt}"`)}
-                      >
-                        💼 LinkedIn Post
-                      </button>
-                      <button
-                        className={styles.aiActionChip}
-                        onClick={() => handleGeneratePost(turn.userPrompt, 'X', `Create an X / Twitter thread on "${turn.userPrompt}"`)}
-                      >
-                        🧵 X / Twitter Thread
-                      </button>
-                      <button
-                        className={styles.aiActionChip}
-                        onClick={() => handleGeneratePost(turn.userPrompt, 'Instagram', `Draft an Instagram caption for "${turn.userPrompt}"`)}
-                      >
-                        📸 Instagram Caption
-                      </button>
-                      <button
-                        className={styles.aiActionChip}
-                        onClick={() => handleGeneratePost(turn.userPrompt, 'TikTok', `Write a TikTok script on "${turn.userPrompt}"`)}
-                      >
-                        🎵 TikTok Script
-                      </button>
+                      {turn.assistantText}
                     </div>
                   )}
 
@@ -722,7 +793,7 @@ function DashboardContent() {
                             isCrafting={isCrafting}
                             isProductizing={isProductizing}
                             isPublishing={isPublishing}
-                            onCraftPost={handleCraftPost}
+                            onCraftPost={handleGeneratePost}
                             onToggleProductize={(id) => setActivePostId(activePostId === id ? null : id)}
                             onProductize={handleProductize}
                             onPublish={handlePublish}
@@ -736,7 +807,7 @@ function DashboardContent() {
                           {turn.ideas[0] && (
                             <button
                               className={styles.aiActionChip}
-                              onClick={() => handleCraftPost(turn.ideas![0].idea_id, 'LinkedIn')}
+                              onClick={() => handleGeneratePost(turn.ideas![0].idea_id, 'LinkedIn')}
                             >
                               📝 Draft Idea #1 for LinkedIn
                             </button>
@@ -744,7 +815,7 @@ function DashboardContent() {
                           {turn.ideas[1] && (
                             <button
                               className={styles.aiActionChip}
-                              onClick={() => handleCraftPost(turn.ideas![1].idea_id, 'X')}
+                              onClick={() => handleGeneratePost(turn.ideas![1].idea_id, 'X')}
                             >
                               🧵 Turn Idea #2 into X Thread
                             </button>
@@ -752,14 +823,14 @@ function DashboardContent() {
                           {turn.ideas[2] && (
                             <button
                               className={styles.aiActionChip}
-                              onClick={() => handleCraftPost(turn.ideas![2].idea_id, 'Instagram')}
+                              onClick={() => handleGeneratePost(turn.ideas![2].idea_id, 'Instagram')}
                             >
                               📸 Draft Idea #3 for Instagram
                             </button>
                           )}
                           <button
                             className={styles.aiActionChip}
-                            onClick={() => handleGenerate(turn.userPrompt)}
+                            onClick={() => handleGeneratePost(turn.userPrompt)}
                           >
                             🔄 Generate 3 More Ideas
                           </button>
@@ -776,7 +847,7 @@ function DashboardContent() {
                       </p>
                       <PostResult
                         post={turn.post}
-                        product={products[turn.post.post_id]}
+                        product={undefined}
                         activePostId={activePostId}
                         isProductizing={isProductizing}
                         onToggleProductize={(id) => setActivePostId(activePostId === id ? null : id)}
@@ -821,7 +892,7 @@ function DashboardContent() {
                   {turn.product && !turn.isLoading && (
                     <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: "12px" }}>
                       <p style={{ fontSize: "14px", fontWeight: 500, color: "var(--color-on-surface-variant)", margin: "0 0 4px" }}>
-                        Here is your generated digital product outline ({turn.product.product_type || "ebook"}):
+                        Here is your full-length digital {turn.product.product_type || "ebook"}:
                       </p>
 
                       <div style={{
@@ -832,29 +903,12 @@ function DashboardContent() {
                         width: "100%",
                         boxSizing: "border-box"
                       }}>
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px" }}>
-                          <span style={{
-                            padding: "4px 12px",
-                            borderRadius: "100px",
-                            background: "color-mix(in srgb, #ec4899 15%, transparent)",
-                            color: "#db2777",
-                            fontSize: "12px",
-                            fontWeight: 700,
-                            letterSpacing: "0.03em",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: "5px"
-                          }}>
-                            📚 EBOOK
-                          </span>
-                          <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--color-primary)" }}>
-                            Est. Price: ${turn.product.monetization_price_suggestion}
-                          </span>
-                        </div>
-
-                        <h3 style={{ fontSize: "18px", fontWeight: 700, margin: "0 0 12px", color: "var(--color-on-surface)" }}>
+                        <h3 style={{ fontSize: "18px", fontWeight: 700, margin: "0 0 8px", color: "var(--color-on-surface)" }}>
                           {turn.product.title}
                         </h3>
+                        <p style={{ fontSize: "14px", color: "var(--color-on-surface-variant)", margin: "0 0 16px" }}>
+                          Suggested Price: <strong style={{ color: "var(--color-primary)" }}>${turn.product.monetization_price_suggestion}</strong>
+                        </p>
                         
                         {/* Chapters / Structure */}
                         {turn.product.content_structure && (
@@ -865,7 +919,19 @@ function DashboardContent() {
                           </div>
                         )}
 
-                        <div style={{ marginTop: "16px", display: "flex", gap: "10px" }}>
+                        <div style={{ marginTop: "16px", display: "flex", flexWrap: "wrap", gap: "10px" }}>
+                          <button
+                            className={styles.secondaryBtn}
+                            onClick={() => {
+                              const prod = turn.product!;
+                              setPreviewProduct(prod);
+                              setEditTitle(prod.title);
+                              setEditContentText(typeof prod.content_structure === 'string' ? prod.content_structure : JSON.stringify(prod.content_structure, null, 2));
+                              setIsEditMode(false);
+                            }}
+                          >
+                            👁️ Preview & Edit Full Ebook
+                          </button>
                           <button
                             className={styles.primaryBtn}
                             onClick={() => handlePublish(turn.product!.product_id)}
@@ -898,12 +964,177 @@ function DashboardContent() {
               </React.Fragment>
             );
           })}
+            <div ref={messagesEndRef} />
           </div>
         )}
       </div>
 
       {/* Sticky bottom input when docked OR when ideas are active - stretches 100% to screen edges */}
       {(isDockedBottom || ideas.length > 0) && !isGenerating && renderCommandInput(true)}
+
+      {previewProduct && (
+        <div className={styles.modalOverlay} onClick={() => setPreviewProduct(null)}>
+          <div
+            className={styles.modalCard}
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: "800px", width: "94%", maxHeight: "88vh", display: "flex", flexDirection: "column", padding: "28px" }}
+          >
+            {/* Modal Header */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+              <div>
+                <span style={{ fontSize: "11px", fontWeight: 800, color: "var(--color-primary)", textTransform: "uppercase", letterSpacing: "0.8px" }}>
+                  {previewProduct.product_type} Previewer & Editor
+                </span>
+                <h2 style={{ fontSize: "20px", fontWeight: 700, margin: "4px 0 0", color: "var(--color-on-surface)" }}>
+                  {isEditMode ? "Edit Ebook Title & Content" : previewProduct.title}
+                </h2>
+              </div>
+
+              <div style={{ display: "flex", gap: "8px" }}>
+                <button
+                  className={isEditMode ? styles.primaryBtn : styles.secondaryBtn}
+                  onClick={() => setIsEditMode(!isEditMode)}
+                  style={{ height: "36px", fontSize: "13px" }}
+                >
+                  {isEditMode ? "📖 Reader View" : "✏️ Manual Edit Mode"}
+                </button>
+                <button
+                  className={styles.secondaryBtn}
+                  onClick={() => setPreviewProduct(null)}
+                  style={{ height: "36px", padding: "0 12px" }}
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body: Reader or Edit Mode */}
+            <div style={{ flex: 1, overflowY: "auto", paddingRight: "4px", margin: "12px 0 20px" }}>
+              {isEditMode ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                  <div>
+                    <label style={{ fontSize: "12px", fontWeight: 700, color: "var(--color-on-surface-variant)" }}>Ebook Title</label>
+                    <input
+                      type="text"
+                      className={styles.commandInput}
+                      style={{ width: "100%", padding: "10px 14px", marginTop: "6px" }}
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: "12px", fontWeight: 700, color: "var(--color-on-surface-variant)" }}>Full Content Text & Chapters</label>
+                    <textarea
+                      className={styles.commandInput}
+                      style={{
+                        width: "100%",
+                        minHeight: "320px",
+                        padding: "14px",
+                        marginTop: "6px",
+                        fontFamily: "inherit",
+                        fontSize: "14px",
+                        lineHeight: 1.6,
+                        resize: "vertical"
+                      }}
+                      value={editContentText}
+                      onChange={(e) => setEditContentText(e.target.value)}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div style={{
+                  background: "var(--color-surface-variant)",
+                  borderRadius: "14px",
+                  padding: "28px 32px",
+                  color: "var(--color-on-surface)",
+                  boxSizing: "border-box"
+                }}>
+                  {renderFormattedEbookContent(
+                    editContentText || (typeof previewProduct.content_structure === 'string' ? previewProduct.content_structure : JSON.stringify(previewProduct.content_structure, null, 2))
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* AI Refinement Bar inside Modal */}
+            <div style={{ borderTop: "1px solid var(--color-outline-variant)", paddingTop: "16px" }}>
+              <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
+                <input
+                  type="text"
+                  className={styles.commandInput}
+                  style={{ flex: 1, padding: "10px 16px", fontSize: "13.5px" }}
+                  placeholder="Ask AI to refine (e.g. 'Add 2 case studies to Chapter 1' or 'Make Chapter 3 punchier')..."
+                  value={refinePromptText}
+                  onChange={(e) => setRefinePromptText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && refinePromptText.trim() && !isGenerating) {
+                      const p = refinePromptText.trim();
+                      setRefinePromptText('');
+                      handleSubmitMessage(`Refine ebook "${previewProduct.title}": ${p}`);
+                    }
+                  }}
+                />
+                <button
+                  className={styles.secondaryBtn}
+                  onClick={() => {
+                    if (refinePromptText.trim() && !isGenerating) {
+                      const p = refinePromptText.trim();
+                      setRefinePromptText('');
+                      handleSubmitMessage(`Refine ebook "${previewProduct.title}": ${p}`);
+                    }
+                  }}
+                  disabled={!refinePromptText.trim() || isGenerating}
+                >
+                  ✨ AI Refine
+                </button>
+              </div>
+
+              {/* Action Buttons */}
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+                {isEditMode && (
+                  <button
+                    className={styles.primaryBtn}
+                    onClick={async () => {
+                      setIsSavingProduct(true);
+                      try {
+                        await fetch('/api/products', {
+                          method: 'PUT',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            product_id: previewProduct.product_id,
+                            title: editTitle,
+                            content_structure: editContentText,
+                            full_content: editContentText
+                          })
+                        });
+                        setPreviewProduct(prev => prev ? { ...prev, title: editTitle, content_structure: editContentText } : null);
+                        setIsEditMode(false);
+                      } catch (e) {
+                        console.error(e);
+                      } finally {
+                        setIsSavingProduct(false);
+                      }
+                    }}
+                    disabled={isSavingProduct}
+                  >
+                    {isSavingProduct ? "Saving..." : "💾 Save Edits"}
+                  </button>
+                )}
+                <button
+                  className={styles.primaryBtn}
+                  onClick={() => {
+                    handlePublish(previewProduct.product_id);
+                    setPreviewProduct(null);
+                  }}
+                >
+                  🚀 Save & Publish Product
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showPublishModal && (
         <div className={styles.modalOverlay} onClick={() => { setShowPublishModal(false); setPublishedProductId(null); }}>

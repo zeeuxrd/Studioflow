@@ -4,8 +4,12 @@ import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { badRequest } from "@/lib/api-error";
 import { getBaseUrl } from "@/lib/utils";
+import { enforceAuthRateLimit } from "@/lib/auth-rate-limit";
 
 export async function POST(req: Request) {
+  const blocked = enforceAuthRateLimit(req, "signup", 3, 60 * 60 * 1000);
+  if (blocked) return blocked;
+
   try {
     const { name, email: rawEmail, password } = await req.json();
 

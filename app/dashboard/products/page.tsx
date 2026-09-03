@@ -7,9 +7,6 @@ import Link from "next/link";
 import { 
   Package, 
   Search, 
-  ArrowUpDown, 
-  ArrowUp, 
-  ArrowDown,
   BookOpen,
   Rocket,
   FileText,
@@ -137,25 +134,6 @@ export default function ProductsPage() {
     }
   };
 
-  const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortOrder(prev => prev === "asc" ? "desc" : "asc");
-    } else {
-      setSortField(field);
-      setSortOrder("desc");
-    }
-  };
-
-  const renderSortIndicator = (field: SortField) => {
-    const iconStyle = { display: "inline-flex", alignItems: "center", verticalAlign: "middle" };
-    if (sortField !== field) {
-      return <ArrowUpDown size={14} style={{ opacity: 0.4, ...iconStyle }} />;
-    }
-    return sortOrder === "asc" 
-      ? <ArrowUp size={14} style={{ color: "var(--color-primary)", ...iconStyle }} /> 
-      : <ArrowDown size={14} style={{ color: "var(--color-primary)", ...iconStyle }} />;
-  };
-
   const getProductIcon = (type: string) => {
     switch (type.toLowerCase()) {
       case "ebook":
@@ -210,9 +188,9 @@ export default function ProductsPage() {
 
   return (
     <>
-      <div className={styles.libraryWrapper}>
+      <div className={`${styles.libraryWrapper} ${styles.productsPage}`} style={{ paddingTop: "88px", paddingLeft: "16px", paddingRight: "16px" }}>
       {/* Header matching Content Library */}
-      <header className={styles.libraryHeader}>
+      <header className={`${styles.libraryHeader} ${styles.productsHeader}`}>
         <div className={styles.libraryTitleSec}>
           <h1 className={styles.libraryTitle} style={{ margin: 0, lineHeight: 1.2, marginBottom: 2 }}>Products</h1>
           <p className={styles.librarySubtitle} style={{ margin: 0 }}>Your published digital products</p>
@@ -232,7 +210,7 @@ export default function ProductsPage() {
           </div>
 
           <button 
-            className={styles.libraryNewBtn}
+            className={`${styles.libraryNewBtn} ${styles.productsCreateBtn}`}
             onClick={() => router.push("/dashboard")}
           >
             <Plus size={16} />
@@ -242,22 +220,6 @@ export default function ProductsPage() {
       </header>
 
       {/* Filter pills & view toggle bar */}
-      {products.length > 0 && (
-        <div className={styles.librarySubHeader}>
-          <div className={styles.libraryViewToggles} style={{ marginLeft: "auto" }}>
-            {/* Quick sort toggle */}
-            <button 
-              className={styles.librarySortBtn}
-              onClick={() => handleSort("price")}
-              title={`Sort by Price: ${sortField === "price" && sortOrder === "asc" ? "Ascending" : "Descending"}`}
-            >
-              <span>Price</span>
-              {renderSortIndicator("price")}
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Sleek Floating Bottom Bulk Bar for Multiple Selections */}
       {selectedIds.size > 1 && (
         <div className={styles.floatingBulkBar}>
@@ -291,7 +253,7 @@ export default function ProductsPage() {
         ) : sortedItems.length === 0 ? (
           <div className={styles.libraryEmpty}>
             <div style={{ marginBottom: 8 }}><Package size={40} style={{ opacity: 0.3 }} /></div>
-            <p style={{ margin: 0 }}>No products found. Turn your posts into digital products from the Idea Architect.</p>
+            <p className={styles.productsEmptyText} style={{ margin: 0 }}>No products found. Turn your posts into digital products from the Idea Architect.</p>
           </div>
         ) : (
           /* Grid Layout (Cards) */

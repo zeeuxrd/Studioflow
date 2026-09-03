@@ -322,4 +322,31 @@
     grid-template-columns: 1fr;
     width: 100%;
   }
+
+  .analyticsPage {
+    gap: 0 !important;
+  }
+
+  .analyticsHeader {
+    margin-top: 32px !important;
+    margin-bottom: 12px !important;
+  }
+
+  .analyticsControls {
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 8px !important;
+  }
+
+  .analyticsSearch {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    width: auto !important;
+  }
+
+  .analyticsTimeWrap {
+    flex-shrink: 0 !important;
+  }
 }
