@@ -394,25 +394,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </div>
             </div>
 
-            {/* Mobile Plan Tab Bar (Starter vs Creator) */}
-            <div className={styles.modalMobilePlanTabs}>
-              <button
-                type="button"
-                className={`${styles.modalMobilePlanTabBtn} ${mobilePlanTab === "starter" ? styles.modalMobilePlanTabActive : ""}`}
-                onClick={() => setMobilePlanTab("starter")}
-              >
-                Starter Plan
-              </button>
-              <button
-                type="button"
-                className={`${styles.modalMobilePlanTabBtn} ${mobilePlanTab === "creator" ? styles.modalMobilePlanTabActive : ""}`}
-                onClick={() => setMobilePlanTab("creator")}
-              >
-                Creator Plan 🔥
-              </button>
-            </div>
-
-            {/* Desktop Pricing Cards Grid (All 3 Plans) */}
+            {/* Pricing Cards Grid (All 3 Plans) */}
             <div className={styles.modalDesktopGrid} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 20 }}>
               {/* Starter */}
               <div style={{
@@ -422,7 +404,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 padding: 24,
                 display: "flex",
                 flexDirection: "column",
-                justify: "space-between"
+                justifyContent: "space-between"
               }}>
                 <div>
                   <h3 style={{ fontSize: 20, fontWeight: 700, margin: "0 0 6px", color: "var(--color-on-surface)" }}>Starter</h3>
@@ -457,7 +439,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 padding: 24,
                 display: "flex",
                 flexDirection: "column",
-                justify: "space-between",
+                justifyContent: "space-between",
                 position: "relative"
               }}>
                 <span style={{
@@ -508,7 +490,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 padding: 24,
                 display: "flex",
                 flexDirection: "column",
-                justify: "space-between"
+                justifyContent: "space-between"
               }}>
                 <div>
                   <h3 style={{ fontSize: 20, fontWeight: 700, margin: "0 0 6px", color: "var(--color-on-surface)" }}>Pro</h3>
@@ -535,99 +517,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   {subscribing === "pro" ? "Redirecting..." : "Choose Pro"}
                 </button>
               </div>
-            </div>
-
-            {/* Mobile-Only Selected Card View (Starter or Creator) */}
-            <div className={styles.modalMobilePlanTabs} style={{ flexDirection: "column", background: "transparent", padding: 0 }}>
-              {mobilePlanTab === "starter" ? (
-                <div style={{
-                  background: "var(--color-surface)",
-                  border: "1px solid var(--color-outline)",
-                  borderRadius: 20,
-                  padding: 24,
-                  width: "100%",
-                  boxSizing: "border-box",
-                  display: "flex",
-                  flexDirection: "column",
-                  justify: "space-between"
-                }}>
-                  <div>
-                    <h3 style={{ fontSize: 20, fontWeight: 700, margin: "0 0 6px", color: "var(--color-on-surface)" }}>Starter</h3>
-                    <p style={{ fontSize: 13, color: "var(--color-on-surface-variant)", margin: "0 0 16px" }}>
-                      Perfect for solo creators starting their content journey.
-                    </p>
-                    <div style={{ fontSize: 28, fontWeight: 800, color: "var(--color-on-surface)", marginBottom: 16 }}>
-                      &#8358;{billingPeriod === "monthly" ? "7,000" : "20,000"}
-                      <span style={{ fontSize: 12, fontWeight: 400, color: "var(--color-on-surface-variant)" }}>/{billingPeriod === "monthly" ? "mo" : "yr"}</span>
-                    </div>
-                    <ul style={{ listStyle: "none", padding: 0, margin: "0 0 20px", fontSize: 13, display: "flex", flexDirection: "column", gap: 10 }}>
-                      <li style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--color-on-surface)" }}><Check size={16} color="var(--color-primary)" /> 50 AI content generations/mo</li>
-                      <li style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--color-on-surface)" }}><Check size={16} color="var(--color-primary)" /> 2 platform integrations</li>
-                      <li style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--color-on-surface)" }}><Check size={16} color="var(--color-primary)" /> Basic analytics</li>
-                      <li style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--color-on-surface)" }}><Check size={16} color="var(--color-primary)" /> Idea Architect tool</li>
-                    </ul>
-                  </div>
-                  <button
-                    className={styles.secondaryBtn}
-                    onClick={() => handleSubscribePlan("starter")}
-                    disabled={subscribing === "starter"}
-                  >
-                    {subscribing === "starter" ? "Redirecting..." : "Choose Starter"}
-                  </button>
-                </div>
-              ) : (
-                <div style={{
-                  background: "color-mix(in srgb, var(--color-primary) 10%, var(--color-surface))",
-                  border: "2px solid var(--color-primary)",
-                  borderRadius: 20,
-                  padding: 24,
-                  width: "100%",
-                  boxSizing: "border-box",
-                  display: "flex",
-                  flexDirection: "column",
-                  justify: "space-between",
-                  position: "relative"
-                }}>
-                  <span style={{
-                    position: "absolute",
-                    top: -12,
-                    left: "50%",
-                    transform: "translateX(-50%)",
-                    background: "var(--color-primary)",
-                    color: "var(--color-on-primary)",
-                    fontSize: 10,
-                    fontWeight: 800,
-                    letterSpacing: "0.8px",
-                    padding: "4px 12px",
-                    borderRadius: 100
-                  }}>MOST POPULAR</span>
-
-                  <div>
-                    <h3 style={{ fontSize: 20, fontWeight: 700, margin: "8px 0 6px", color: "var(--color-on-surface)" }}>Creator</h3>
-                    <p style={{ fontSize: 13, color: "var(--color-on-surface-variant)", margin: "0 0 16px" }}>
-                      For growing creators ready to scale their content output.
-                    </p>
-                    <div style={{ fontSize: 28, fontWeight: 800, color: "var(--color-primary)", marginBottom: 16 }}>
-                      &#8358;{billingPeriod === "monthly" ? "14,000" : "50,000"}
-                      <span style={{ fontSize: 12, fontWeight: 400, color: "var(--color-on-surface-variant)" }}>/{billingPeriod === "monthly" ? "mo" : "yr"}</span>
-                    </div>
-                    <ul style={{ listStyle: "none", padding: 0, margin: "0 0 20px", fontSize: 13, display: "flex", flexDirection: "column", gap: 10 }}>
-                      <li style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--color-on-surface)" }}><Check size={16} color="var(--color-primary)" /> 200 AI content generations/mo</li>
-                      <li style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--color-on-surface)" }}><Check size={16} color="var(--color-primary)" /> All platform integrations</li>
-                      <li style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--color-on-surface)" }}><Check size={16} color="var(--color-primary)" /> Advanced analytics</li>
-                      <li style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--color-on-surface)" }}><Check size={16} color="var(--color-primary)" /> Content Crafter + Product Generator</li>
-                      <li style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--color-on-surface)" }}><Check size={16} color="var(--color-primary)" /> Priority support</li>
-                    </ul>
-                  </div>
-                  <button
-                    className={styles.primaryBtn}
-                    onClick={() => handleSubscribePlan("creator")}
-                    disabled={subscribing === "creator"}
-                  >
-                    {subscribing === "creator" ? "Redirecting..." : "Upgrade to Creator"}
-                  </button>
-                </div>
-              )}
             </div>
           </div>
         </div>

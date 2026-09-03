@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Eye, EyeOff, ArrowLeft, Circle } from "lucide-react";
+import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
 import styles from "./signup.module.css";
@@ -143,34 +143,27 @@ export default function SignUpPage() {
       <div className={styles.card}>
         {step === 1 && (
           <>
-            <h1 className={styles.title}>What's your name?</h1>
-            <p className={styles.subtitle}>We'll use this to personalize your experience</p>
+            <h1 className={styles.title}>Create your account</h1>
+            <p className={styles.subtitle}>Enter your details to get started with StudioFlow</p>
             <form className={styles.form} onSubmit={handleStep1} noValidate>
               <div className={styles.inputGroup}>
+                <label htmlFor="name" className={styles.label}>Full Name</label>
                 <input
                   id="name"
                   type="text"
                   className={`${styles.input} ${name.trim() ? styles.inputFilled : ''} ${nameError ? styles.inputError : ''}`}
-                  placeholder=""
+                  placeholder="Your full name"
                   value={name}
                   onChange={(e) => { setName(e.target.value); setNameError(""); }}
-                  onBlur={() => { if (!name.trim()) setNameError("this field cannot be empty"); }}
+                  onBlur={() => { if (!name.trim()) setNameError("Field cannot be empty"); }}
                   required
                   autoFocus
                 />
                 {nameError && <p className={styles.fieldError}>{nameError}</p>}
               </div>
-              <button type="submit" className={`${styles.arrowBtn} ${name.trim() ? styles.arrowBtnActive : ''}`}>Next</button>
-            </form>
-          </>
-        )}
 
-        {step === 2 && (
-          <>
-            <h1 className={styles.title}>What's your email?</h1>
-            <p className={styles.subtitle}>We'll send you a confirmation once you're in</p>
-            <form className={styles.form} onSubmit={handleStep2} noValidate>
               <div className={styles.inputGroup}>
+                <label htmlFor="email" className={styles.label}>Email Address</label>
                 <input
                   id="email"
                   type="email"
@@ -187,24 +180,28 @@ export default function SignUpPage() {
                       setEmailFormatError(false);
                     }
                   }}
-                  onBlur={() => { if (!email.trim()) setEmailError("this field cannot be empty"); }}
+                  onBlur={() => { if (!email.trim()) setEmailError("Field cannot be empty"); }}
                   required
-                  autoFocus
                 />
                 {emailFormatError && <p className={styles.fieldError}>Enter a valid email address</p>}
                 {emailError && <p className={styles.fieldError}>{emailError}</p>}
               </div>
-              <button type="submit" className={`${styles.arrowBtn} ${email.trim() && !emailFormatError ? styles.arrowBtnActive : ''}`}>Next</button>
-              <button type="button" className={styles.backBtn} onClick={() => { setStep(1); setError(""); }}><ArrowLeft size={14} /> Back</button>
+
+              <button
+                type="submit"
+                className={`${styles.arrowBtn} ${name.trim() && email.trim() && !emailFormatError ? styles.arrowBtnActive : ''}`}
+              >
+                Next
+              </button>
             </form>
           </>
         )}
 
-        {step === 3 && (
+        {step === 2 && (
           <>
             <h1 className={styles.title}>Set your password</h1>
             <p className={styles.subtitle}>Secure your account with a strong password</p>
-            <form className={styles.form} onSubmit={handleSubmit} noValidate>
+            <form className={styles.form} onSubmit={handleStep2} noValidate>
               <div className={styles.inputGroup}>
                 <label htmlFor="password" className={styles.label}>Password</label>
                 <div className={styles.passwordWrapper}>
@@ -215,7 +212,7 @@ export default function SignUpPage() {
                     placeholder="At least 8 characters"
                     value={password}
                     onChange={(e) => { setPassword(e.target.value); setPasswordError(""); }}
-                    onBlur={() => { if (!password.trim()) setPasswordError("this field cannot be empty"); }}
+                    onBlur={() => { if (!password.trim()) setPasswordError("Field cannot be empty"); }}
                     required
                     minLength={8}
                     autoFocus
@@ -242,7 +239,7 @@ export default function SignUpPage() {
                     placeholder="Re-enter your password"
                     value={confirmPassword}
                     onChange={(e) => { setConfirmPassword(e.target.value); setConfirmPasswordError(""); }}
-                    onBlur={() => { if (!confirmPassword.trim()) setConfirmPasswordError("this field cannot be empty"); }}
+                    onBlur={() => { if (!confirmPassword.trim()) setConfirmPasswordError("Field cannot be empty"); }}
                     required
                     minLength={6}
                   />
@@ -258,13 +255,21 @@ export default function SignUpPage() {
                 {confirmPasswordError && <p className={styles.fieldError}>{confirmPasswordError}</p>}
               </div>
               {error && <p className={styles.error}>{error}</p>}
-              <button type="submit" className={`${styles.arrowBtn} ${password.trim() && confirmPassword.trim() ? styles.arrowBtnActive : ''}`} disabled={isLoading}>
+              <button
+                type="submit"
+                className={`${styles.arrowBtn} ${password.trim() && confirmPassword.trim() ? styles.arrowBtnActive : ''}`}
+                disabled={isLoading}
+              >
                 {isLoading ? "Creating my account..." : "Create my account"}
               </button>
-              <button type="button" className={styles.backBtn} onClick={() => { setStep(2); setError(""); }}><ArrowLeft size={14} /> Back</button>
+              <button
+                type="button"
+                className={styles.backBtn}
+                onClick={() => { setStep(1); setError(""); }}
+              >
+                <ArrowLeft size={14} /> Back
+              </button>
             </form>
-          </>
-        )}
           </>
         )}
 

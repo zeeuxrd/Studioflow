@@ -216,7 +216,7 @@ function DashboardContent() {
 
       const promptText = chat.idea?.idea_text || chat.content_body || chat.idea?.niche || "";
       if (promptText) {
-        setTurns([{ id: `turn_${Date.now()}`, prompt: promptText, timestamp: Date.now(), type: 'initial' }]);
+        setTurns([{ id: `turn_${Date.now()}`, userPrompt: promptText, timestamp: Date.now(), intent: 'ideas' }]);
       }
 
       setIdeas([parentIdea]);
@@ -658,7 +658,7 @@ function DashboardContent() {
                             isCrafting={isCrafting}
                             isProductizing={isProductizing}
                             isPublishing={isPublishing}
-                            onCraftPost={handleCraftPost}
+                            onCraftPost={handleGeneratePost}
                             onToggleProductize={(id) => setActivePostId(activePostId === id ? null : id)}
                             onProductize={handleProductize}
                             onPublish={handlePublish}
@@ -672,7 +672,7 @@ function DashboardContent() {
                           {turn.ideas[0] && (
                             <button
                               className={styles.aiActionChip}
-                              onClick={() => handleCraftPost(turn.ideas![0].idea_id, 'LinkedIn')}
+                              onClick={() => handleGeneratePost(turn.ideas![0].idea_id, 'LinkedIn')}
                             >
                               📝 Draft Idea #1 for LinkedIn
                             </button>
@@ -680,7 +680,7 @@ function DashboardContent() {
                           {turn.ideas[1] && (
                             <button
                               className={styles.aiActionChip}
-                              onClick={() => handleCraftPost(turn.ideas![1].idea_id, 'X')}
+                              onClick={() => handleGeneratePost(turn.ideas![1].idea_id, 'X')}
                             >
                               🧵 Turn Idea #2 into X Thread
                             </button>
@@ -688,14 +688,14 @@ function DashboardContent() {
                           {turn.ideas[2] && (
                             <button
                               className={styles.aiActionChip}
-                              onClick={() => handleCraftPost(turn.ideas![2].idea_id, 'Instagram')}
+                              onClick={() => handleGeneratePost(turn.ideas![2].idea_id, 'Instagram')}
                             >
                               📸 Draft Idea #3 for Instagram
                             </button>
                           )}
                           <button
                             className={styles.aiActionChip}
-                            onClick={() => handleGenerate(turn.userPrompt)}
+                            onClick={() => handleGeneratePost(turn.userPrompt)}
                           >
                             🔄 Generate 3 More Ideas
                           </button>

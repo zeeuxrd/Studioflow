@@ -52,15 +52,12 @@ export default function MarketingPage() {
   const [faqActiveIndex, setFaqActiveIndex] = useState<number | null>(0);
   const [newsletterSubscribed, setNewsletterSubscribed] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const heroContainerRef = useRef<HTMLDivElement>(null);
   const featuresRef = useRef<HTMLDivElement>(null);
   const heroRef = useRef<HTMLElement>(null);
   const heroCtaRef = useRef<HTMLAnchorElement>(null);
   const headlineRef = useRef<HTMLDivElement>(null);
-  const hiwSectionRef = useRef<HTMLElement>(null);
   const hiwHeaderRef = useRef<HTMLDivElement>(null);
   const hiwGridRef = useRef<HTMLDivElement>(null);
-  const pricingSectionRef = useRef<HTMLElement>(null);
   const pricingGridRef = useRef<HTMLDivElement>(null);
   const testimonialsRef = useRef<HTMLElement>(null);
   const faqRef = useRef<HTMLElement>(null);
@@ -72,7 +69,6 @@ export default function MarketingPage() {
   const demoInputRowRef = useRef<HTMLDivElement>(null);
   const demoSendBtnRef = useRef<HTMLSpanElement>(null);
   const demoChatEndRef = useRef<HTMLDivElement>(null);
-  const [cursorPos, setCursorPos] = useState({ x: 50, y: 88, opacity: 0, scale: 1 });
   const [demoInputText, setDemoInputText] = useState('');
   const [demoChatOpen, setDemoChatOpen] = useState(false);
   const [demoUserMsg, setDemoUserMsg] = useState('');
@@ -103,8 +99,51 @@ export default function MarketingPage() {
     let cancelled = false;
     const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+    const moveCursorTo = (el: HTMLElement | null) => {
+      if (!el || !dashboardPreviewRef.current || !demoCursorRef.current) return Promise.resolve();
+      const containerRect = dashboardPreviewRef.current.getBoundingClientRect();
+      const rect = el.getBoundingClientRect();
+      const x = rect.left + rect.width / 2 - containerRect.left;
+      const y = rect.top + rect.height / 2 - containerRect.top;
+      return new Promise<void>((resolve) => {
+        gsap.to(dashboardPreviewRef.current, { scale: 1.035, duration: 0.5, ease: 'power2.out' });
+        gsap.to(demoCursorRef.current, {
+          left: x,
+          top: y,
+          opacity: 1,
+          duration: 0.9,
+          ease: 'power2.inOut',
+          onComplete: () => {
+            gsap.to(dashboardPreviewRef.current, { scale: 1.015, duration: 0.5, ease: 'power2.inOut' });
+            resolve();
+          },
+        });
+      });
+    };
+
+    const clickPulse = () => {
+      return new Promise<void>((resolve) => {
+        const tl = gsap.timeline({ onComplete: () => resolve() });
+        tl.to(demoCursorRef.current, { scale: 0.7, duration: 0.12 }, 0)
+          .to(dashboardPreviewRef.current, { scale: 1.05, duration: 0.15, ease: 'power2.out' }, 0)
+          .to(demoCursorRef.current, { scale: 1, duration: 0.2 }, 0.12)
+          .to(dashboardPreviewRef.current, { scale: 1, duration: 0.6, ease: 'power2.inOut' }, 0.3);
+      });
+    };
+
+    const typeText = async (text: string, setter: (v: string) => void, delay = 35) => {
+      for (let i = 0; i <= text.length; i++) {
+        if (cancelled) return;
+        setter(text.slice(0, i));
+        await sleep(delay);
+      }
+    };
+
+    if (dashboardPreviewRef.current) gsap.set(dashboardPreviewRef.current, { transformOrigin: 'center center' });
+
     const runDemo = async () => {
-      await sleep(600);
+      if (demoCursorRef.current) gsap.set(demoCursorRef.current, { opacity: 0 });
+      await sleep(1500);
 
       while (!cancelled) {
         setDemoInputText('');
@@ -117,142 +156,72 @@ export default function MarketingPage() {
         setDemoUserPick('');
         setDemoGenerating(false);
         setDemoPost('');
-        setCursorPos({ x: 50, y: 88, opacity: 0, scale: 1 });
 
+        await sleep(1000);
+        if (cancelled) break;
+
+        await moveCursorTo(demoInputRowRef.current);
+        if (cancelled) break;
+        await clickPulse();
+        await typeText(DEMO_NICHE, setDemoInputText);
+        if (cancelled) break;
         await sleep(500);
+
+        await moveCursorTo(demoSendBtnRef.current);
         if (cancelled) break;
+        await clickPulse();
 
-        // Move cursor to input box center
-        setCursorPos({ x: 50, y: 88, opacity: 1, scale: 1 });
-        await sleep(450);
-        if (cancelled) break;
-
-        // Pulse click input box
-        setCursorPos((prev) => ({ ...prev, scale: 0.75 }));
-        await sleep(100);
-        setCursorPos((prev) => ({ ...prev, scale: 1 }));
-        await sleep(200);
-
-        // Type prompt text
-        for (let i = 0; i <= DEMO_NICHE.length; i++) {
-          if (cancelled) break;
-          setDemoInputText(DEMO_NICHE.slice(0, i));
-          await sleep(24);
-        }
-        if (cancelled) break;
-        await sleep(350);
-
-        // Move cursor to Send button
-        setCursorPos({ x: 93, y: 88, opacity: 1, scale: 1 });
-        await sleep(450);
-        if (cancelled) break;
-
-        // Click Send button
-        setCursorPos((prev) => ({ ...prev, scale: 0.75 }));
-        await sleep(100);
-        setCursorPos((prev) => ({ ...prev, scale: 1 }));
-        await sleep(200);
-
-        // Open chat thread & user message
         setDemoChatOpen(true);
         setDemoUserMsg(DEMO_NICHE);
         setDemoInputText('');
-        await sleep(350);
-        if (cancelled) break;
-
-        // AI thinking dots
-        setDemoAiTyping(true);
         await sleep(600);
         if (cancelled) break;
 
-        // Stream AI reply header
-        setDemoAiTyping(false);
-        for (let i = 0; i <= DEMO_AI_REPLY.length; i++) {
-          if (cancelled) break;
-          setDemoAiReply(DEMO_AI_REPLY.slice(0, i));
-          await sleep(20);
-        }
+        setDemoAiTyping(true);
+        await sleep(1400);
         if (cancelled) break;
-        await sleep(200);
 
-        // Stream idea cards
+        setDemoAiTyping(false);
+        await typeText(DEMO_AI_REPLY, setDemoAiReply, 18);
+        if (cancelled) break;
+        await sleep(300);
+
         for (const idea of DEMO_IDEAS) {
           if (cancelled) break;
           setDemoIdeas((prev) => [...prev, idea]);
-          await sleep(200);
+          await sleep(350);
         }
         if (cancelled) break;
-        await sleep(400);
 
-        // Move cursor to first idea card
-        setCursorPos({ x: 50, y: 48, opacity: 1, scale: 1 });
+        await sleep(1000);
+        if (cancelled) break;
+
+        const ideaCard = dashboardPreviewRef.current?.querySelector<HTMLElement>(`.${styles.dpIdeaCard}`);
+        await moveCursorTo(ideaCard ?? null);
+        if (cancelled) break;
+        await clickPulse();
+        setDemoSelectedIdea(0);
         await sleep(500);
         if (cancelled) break;
 
-        // Click first idea card
-        setCursorPos((prev) => ({ ...prev, scale: 0.75 }));
-        await sleep(100);
-        setCursorPos((prev) => ({ ...prev, scale: 1 }));
-        setDemoSelectedIdea(0);
-        await sleep(350);
-        if (cancelled) break;
-
-        // User picks idea
         setDemoUserPick(`I'll go with this one: "${DEMO_IDEAS[0]}"`);
-        await sleep(450);
-        if (cancelled) break;
-
-        // AI generating post dots
-        setDemoGenerating(true);
-        await sleep(700);
-        if (cancelled) break;
-
-        // Stream generated post content
-        setDemoGenerating(false);
-        for (let i = 0; i <= DEMO_POST.length; i++) {
-          if (cancelled) break;
-          setDemoPost(DEMO_POST.slice(0, i));
-          await sleep(12);
-        }
-        if (cancelled) break;
-
-        // Hold and fade out cursor before restart
-        await sleep(4000);
-        setCursorPos((prev) => ({ ...prev, opacity: 0 }));
         await sleep(800);
+        if (cancelled) break;
+
+        setDemoGenerating(true);
+        await sleep(1400);
+        if (cancelled) break;
+
+        setDemoGenerating(false);
+        await typeText(DEMO_POST, setDemoPost, 16);
+        if (cancelled) break;
+
+        await sleep(6500);
       }
     };
 
     runDemo();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useLayoutEffect(() => {
-    const ctx = gsap.context(() => {
-      const sections = [
-        hiwSectionRef.current,
-        featuresRef.current,
-        testimonialsRef.current,
-        pricingSectionRef.current,
-      ].filter(Boolean) as HTMLElement[];
-
-      sections.forEach((sec) => {
-        const isTall = sec.offsetHeight > window.innerHeight + 40;
-        const startCond = isTall ? 'bottom bottom' : 'top top';
-
-        ScrollTrigger.create({
-          trigger: sec,
-          start: startCond,
-          pin: true,
-          pinSpacing: false,
-          anticipatePin: 1,
-        });
-      });
-    });
-
-    return () => ctx.revert();
+    return () => { cancelled = true; };
   }, []);
 
   const handleCtaEnter = () => {
@@ -789,16 +758,7 @@ export default function MarketingPage() {
 
   return (
     <div className={styles.page}>
-      <div className={styles.headerHeroContainer} ref={heroContainerRef}>
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          className={styles.heroVideoBackground}
-        >
-          <source src="/images/assets/hero-video.mp4" type="video/mp4" />
-        </video>
+      <div className={styles.headerHeroContainer}>
         {/* ——— NAV ——— */}
         <header className={styles.nav}>
           <div className={styles.logoContainer}>
@@ -849,161 +809,150 @@ export default function MarketingPage() {
 
           {/* ——— Live dashboard preview mockup ——— */}
           <div className={styles.dashboardPreviewGlow}>
-            <div className={styles.dashboardPreview} ref={dashboardPreviewRef}>
-              <div
-                className={styles.demoCursor}
-                ref={demoCursorRef}
-                style={{
-                  left: `${cursorPos.x}%`,
-                  top: `${cursorPos.y}%`,
-                  opacity: cursorPos.opacity,
-                  transform: `translate(-50%, -50%) scale(${cursorPos.scale})`,
-                }}
-              >
-                <svg width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M4 2.5L4 21.5L9.2 16.8L12.5 23.5L15.8 22L12.6 15.2L19.5 15L4 2.5Z" fill="#1a1a1a" stroke="#fff" strokeWidth="1.5" strokeLinejoin="round" />
-                </svg>
+          <div className={styles.dashboardPreview} ref={dashboardPreviewRef}>
+            <div className={styles.demoCursor} ref={demoCursorRef}>
+              <svg width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M4 2.5L4 21.5L9.2 16.8L12.5 23.5L15.8 22L12.6 15.2L19.5 15L4 2.5Z" fill="#1a1a1a" stroke="#fff" strokeWidth="1.5" strokeLinejoin="round" />
+              </svg>
+            </div>
+            <aside className={styles.dpSidebar}>
+              <div className={styles.dpBrand}>
+                <Image src="/images/assets/favicon.svg" alt="" width={20} height={20} />
+                <span className={styles.dpBrandName}>StudioFlow</span>
               </div>
-              <aside className={styles.dpSidebar}>
-                <div className={styles.dpBrand}>
-                  <Image src="/images/assets/favicon.svg" alt="" width={20} height={20} />
-                  <span className={styles.dpBrandName}>StudioFlow</span>
+
+              <div className={styles.dpLink}><MessageSquarePlus size={16} /><span>New Chat</span></div>
+              <div className={styles.dpLink}><Search size={16} /><span>Search chats</span></div>
+
+              <nav className={styles.dpNav}>
+                <div className={`${styles.dpLink} ${styles.dpLinkActive}`}><Package size={16} /><span>Products</span></div>
+                <div className={styles.dpLink}><BarChart3 size={16} /><span>Analytics</span></div>
+                <div className={styles.dpLink}><MessageCircle size={16} /><span>Chats</span><ChevronRight size={12} className={styles.dpLinkChevron} /></div>
+              </nav>
+
+              <div className={styles.dpFreeBadge}>
+                <div className={styles.dpFreeRow}><span>Free</span><span>0 / 7</span></div>
+                <div className={styles.dpFreeBar}><div className={styles.dpFreeBarFill}></div></div>
+              </div>
+            </aside>
+
+            <div className={styles.dpMain}>
+              <div className={styles.dpMainHeader}>
+                <div className={styles.dpHeaderActions}>
+                  <span className={styles.dpThemeToggle}><Sun size={15} /></span>
+                  <span className={styles.dpUpgradeBtn}>Upgrade <Crown size={12} /></span>
                 </div>
+              </div>
 
-                <div className={styles.dpLink}><MessageSquarePlus size={16} /><span>New Chat</span></div>
-                <div className={styles.dpLink}><Search size={16} /><span>Search chats</span></div>
+              <div className={`${styles.dpCanvas} ${demoChatOpen ? styles.dpCanvasChat : ''}`} ref={dpCanvasRef}>
+                {!demoChatOpen && (
+                  <h2 className={styles.dpGreeting}>Where should we begin?</h2>
+                )}
 
-                <nav className={styles.dpNav}>
-                  <div className={`${styles.dpLink} ${styles.dpLinkActive}`}><Package size={16} /><span>Products</span></div>
-                  <div className={styles.dpLink}><BarChart3 size={16} /><span>Analytics</span></div>
-                  <div className={styles.dpLink}><MessageCircle size={16} /><span>Chats</span><ChevronRight size={12} className={styles.dpLinkChevron} /></div>
-                </nav>
+                {demoChatOpen && (
+                  <div className={styles.dpChatThread}>
+                    <div className={styles.dpChatBubbleUser}>{demoUserMsg}</div>
 
-                <div className={styles.dpFreeBadge}>
-                  <div className={styles.dpFreeRow}><span>Free</span><span>0 / 7</span></div>
-                  <div className={styles.dpFreeBar}><div className={styles.dpFreeBarFill}></div></div>
-                </div>
-              </aside>
-
-              <div className={styles.dpMain}>
-                <div className={styles.dpMainHeader}>
-                  <div className={styles.dpHeaderActions}>
-                    <span className={styles.dpThemeToggle}><Sun size={15} /></span>
-                    <span className={styles.dpUpgradeBtn}>Upgrade <Crown size={12} /></span>
-                  </div>
-                </div>
-
-                <div className={`${styles.dpCanvas} ${demoChatOpen ? styles.dpCanvasChat : ''}`} ref={dpCanvasRef}>
-                  {!demoChatOpen && (
-                    <h2 className={styles.dpGreeting}>Where should we begin?</h2>
-                  )}
-
-                  {demoChatOpen && (
-                    <div className={styles.dpChatThread}>
-                      <div className={styles.dpChatBubbleUser}>{demoUserMsg}</div>
-
-                      {demoAiTyping && (
-                        <div className={`${styles.dpChatBubbleAi} ${styles.dpThinkingBubble}`}>
-                          <span></span><span></span><span></span>
-                        </div>
-                      )}
-
-                      {!demoAiTyping && demoAiReply && (
-                        <div className={styles.dpChatBubbleAi}>
-                          <p>{demoAiReply}</p>
-                          {demoIdeas.length > 0 && (
-                            <div className={styles.dpIdeaList}>
-                              {demoIdeas.map((idea, i) => (
-                                <div
-                                  key={i}
-                                  className={`${styles.dpIdeaCard} ${demoSelectedIdea === i ? styles.dpIdeaCardSelected : ''}`}
-                                >
-                                  <Sparkles size={13} />
-                                  <span>{idea}</span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {demoUserPick && (
-                        <div className={styles.dpChatBubbleUser}>{demoUserPick}</div>
-                      )}
-
-                      {demoGenerating && (
-                        <div className={`${styles.dpChatBubbleAi} ${styles.dpThinkingBubble}`}>
-                          <span></span><span></span><span></span>
-                        </div>
-                      )}
-
-                      {!demoGenerating && demoPost && (
-                        <div className={styles.dpChatBubbleAi}>
-                          <span className={styles.dpPostLabel}><Sparkles size={12} /> Generated post</span>
-                          <p>{demoPost}</p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  <div className={styles.dpInputRow} ref={demoInputRowRef}>
-                    {demoInputText ? (
-                      <span className={styles.dpInputText}>{demoInputText}</span>
-                    ) : (
-                      <span className={styles.dpInputPlaceholder}>Type a topic or niche...</span>
+                    {demoAiTyping && (
+                      <div className={`${styles.dpChatBubbleAi} ${styles.dpThinkingBubble}`}>
+                        <span></span><span></span><span></span>
+                      </div>
                     )}
-                    <div className={styles.dpInputRight}>
-                      <span className={styles.dpSelectStyle}>Select Style <ChevronDown size={12} /></span>
-                      <span className={styles.dpSendBtn} ref={demoSendBtnRef}><Send size={13} /></span>
-                    </div>
-                  </div>
 
+                    {!demoAiTyping && demoAiReply && (
+                      <div className={styles.dpChatBubbleAi}>
+                        <p>{demoAiReply}</p>
+                        {demoIdeas.length > 0 && (
+                          <div className={styles.dpIdeaList}>
+                            {demoIdeas.map((idea, i) => (
+                              <div
+                                key={i}
+                                className={`${styles.dpIdeaCard} ${demoSelectedIdea === i ? styles.dpIdeaCardSelected : ''}`}
+                              >
+                                <Sparkles size={13} />
+                                <span>{idea}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {demoUserPick && (
+                      <div className={styles.dpChatBubbleUser}>{demoUserPick}</div>
+                    )}
+
+                    {demoGenerating && (
+                      <div className={`${styles.dpChatBubbleAi} ${styles.dpThinkingBubble}`}>
+                        <span></span><span></span><span></span>
+                      </div>
+                    )}
+
+                    {!demoGenerating && demoPost && (
+                      <div className={styles.dpChatBubbleAi}>
+                        <span className={styles.dpPostLabel}><Sparkles size={12} /> Generated post</span>
+                        <p>{demoPost}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div className={styles.dpInputRow} ref={demoInputRowRef}>
+                  {demoInputText ? (
+                    <span className={styles.dpInputText}>{demoInputText}</span>
+                  ) : (
+                    <span className={styles.dpInputPlaceholder}>Type a topic or niche...</span>
+                  )}
+                  <div className={styles.dpInputRight}>
+                    <span className={styles.dpSelectStyle}>Select Style <ChevronDown size={12} /></span>
+                    <span className={styles.dpSendBtn} ref={demoSendBtnRef}><Send size={13} /></span>
+                  </div>
                 </div>
+
               </div>
             </div>
+          </div>
           </div>
         </main>
       </div>
 
       {/* ——— HOW IT WORKS ——— */}
-      <section className={styles.howItWorks} id="how-it-works" ref={hiwSectionRef}>
+      <section className={styles.howItWorks} id="how-it-works">
         <div className={styles.hiwHeaderContainer} ref={hiwHeaderRef}>
-          <h2 className={styles.hiwTitle}>From idea to<br /><span className={styles.hiwTitleAccent}>digital product</span></h2>
+          <h2 className={styles.hiwTitle}>From idea to <span className={styles.hiwTitleAccent}>digital product</span></h2>
           <p className={styles.hiwSubtitle}>
             Package your insights into revenue-generating assets in minutes.
           </p>
         </div>
 
         <div className={styles.hiwGrid} ref={hiwGridRef}>
-          <div className={`${styles.hiwCard} ${styles.hiwCardSide} ${styles.hiwCardWhite}`}>
-            <div className={styles.hiwCardImgWrap}>
-              <Image src="/images/assets/hiw-card1.jpg" alt="Idea Architect" fill sizes="(max-width: 768px) 100vw, 33vw" unoptimized className={styles.hiwCardImg} />
-              <span className={`${styles.hiwCardIcon} ${styles.hiwCardIconPurple}`}><Lightbulb size={16} /></span>
-            </div>
-            <div className={styles.hiwCardCaptionWhite}>
-              <h3 className={styles.hiwCardLabelDark}>Idea Architect</h3>
-              <p className={styles.hiwCardDescDark}>Produce endless niche ideas tailored for your audience.<br />Never run out of content ideas again.</p>
+          <div className={`${styles.hiwCard} ${styles.hiwCardSide}`}>
+            <Image src="/images/assets/hiw-card1.jpg" alt="Idea Architect" fill className={styles.hiwCardImg} />
+            <div className={styles.hiwCardOverlay} />
+            <span className={styles.hiwCardIcon}><Lightbulb size={16} /></span>
+            <div className={styles.hiwCardCaption}>
+              <h3 className={styles.hiwCardLabel}>Idea Architect</h3>
+              <p className={styles.hiwCardDesc}>Produce endless niche ideas tailored for your audience.<br />Never run out of content ideas again.</p>
             </div>
           </div>
 
           <div className={`${styles.hiwCard} ${styles.hiwCardMiddle}`}>
-            <Image src="/images/assets/hiw-card2.jpg" alt="Content Crafter" fill sizes="(max-width: 768px) 100vw, 33vw" unoptimized className={styles.hiwCardImg} />
-            <div className={`${styles.hiwCardOverlay} ${styles.hiwCardOverlayBlue}`} />
-            <span className={`${styles.hiwCardIcon} ${styles.hiwCardIconBlue}`}><PenLine size={16} /></span>
+            <Image src="/images/assets/hiw-card2.jpg" alt="Content Crafter" fill className={styles.hiwCardImg} />
+            <div className={`${styles.hiwCardOverlay} ${styles.hiwCardOverlayPink}`} />
+            <span className={styles.hiwCardIcon}><PenLine size={16} /></span>
             <div className={styles.hiwCardCaption}>
               <h3 className={styles.hiwCardLabel}>Content Crafter</h3>
               <p className={styles.hiwCardDesc}>Convert your ideas into platform-ready posts instantly.<br />Publish-ready copy in seconds, not hours.</p>
             </div>
           </div>
 
-          <div className={`${styles.hiwCard} ${styles.hiwCardSide} ${styles.hiwCardWhite}`}>
-            <div className={styles.hiwCardImgWrap}>
-              <Image src="/images/assets/hiw-card3.jpg" alt="Product Generator" fill sizes="(max-width: 768px) 100vw, 33vw" unoptimized className={styles.hiwCardImg} />
-              <span className={`${styles.hiwCardIcon} ${styles.hiwCardIconOrange}`}><Package size={16} /></span>
-            </div>
-            <div className={styles.hiwCardCaptionWhite}>
-              <h3 className={styles.hiwCardLabelDark}>Product Generator</h3>
-              <p className={styles.hiwCardDescDark}>Package your best content into digital products easily.<br />Launch and sell without extra design work.</p>
+          <div className={`${styles.hiwCard} ${styles.hiwCardSide}`}>
+            <Image src="/images/assets/hiw-card3.jpg" alt="Product Generator" fill className={styles.hiwCardImg} />
+            <div className={styles.hiwCardOverlay} />
+            <span className={styles.hiwCardIcon}><Package size={16} /></span>
+            <div className={styles.hiwCardCaption}>
+              <h3 className={styles.hiwCardLabel}>Product Generator</h3>
+              <p className={styles.hiwCardDesc}>Package your best content into digital products easily.<br />Launch and sell without extra design work.</p>
             </div>
           </div>
         </div>
@@ -1147,14 +1096,14 @@ export default function MarketingPage() {
         {/* Billing Toggle Switch */}
         <div className={styles.pricingToggleContainer}>
           <div className={styles.pricingTogglePill}>
-            <button
+            <button 
               type="button"
               className={`${styles.pricingToggleButton} ${billingPeriod === 'monthly' ? styles.pricingToggleActive : ''}`}
               onClick={() => setBillingPeriod('monthly')}
             >
               Monthly
             </button>
-            <button
+            <button 
               type="button"
               className={`${styles.pricingToggleButton} ${billingPeriod === 'yearly' ? styles.pricingToggleActive : ''}`}
               onClick={() => setBillingPeriod('yearly')}
@@ -1192,7 +1141,7 @@ export default function MarketingPage() {
                 {subscribing === 'starter' ? 'Redirecting...' : 'Start free trial'}
               </button>
             </div>
-
+            
             <div className={styles.pricingCardDivider}></div>
 
             <ul className={styles.pricingFeaturesList}>
@@ -1245,7 +1194,7 @@ export default function MarketingPage() {
                 {subscribing === 'creator' ? 'Redirecting...' : 'Start free trial'}
               </button>
             </div>
-
+            
             <div className={styles.pricingCardDivider}></div>
 
             <ul className={styles.pricingFeaturesList}>
@@ -1298,7 +1247,7 @@ export default function MarketingPage() {
                 {subscribing === 'pro' ? 'Redirecting...' : 'Start free trial'}
               </button>
             </div>
-
+            
             <div className={styles.pricingCardDivider}></div>
 
             <ul className={styles.pricingFeaturesList}>
@@ -1392,83 +1341,83 @@ export default function MarketingPage() {
 
       {/* ——— FOOTER ——— */}
       <footer className={styles.footerMockupSection} ref={footerRef}>
-
-        <div className={styles.footerGrid}>
-
-          {/* Column 1: Brand Logo & Tagline */}
-          <div className={styles.footerLogoCol}>
-            <div className={styles.footerBrand}>
-              <div className={styles.footerLogoIcon}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                  <circle cx="12" cy="15" r="5" />
-                  <circle cx="6" cy="9" r="3" />
-                  <circle cx="18" cy="9" r="3" />
-                  <circle cx="12" cy="5" r="2.5" />
-                </svg>
+          
+          <div className={styles.footerGrid}>
+            
+            {/* Column 1: Brand Logo & Tagline */}
+            <div className={styles.footerLogoCol}>
+              <div className={styles.footerBrand}>
+                <div className={styles.footerLogoIcon}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                    <circle cx="12" cy="15" r="5" />
+                    <circle cx="6" cy="9" r="3" />
+                    <circle cx="18" cy="9" r="3" />
+                    <circle cx="12" cy="5" r="2.5" />
+                  </svg>
+                </div>
+                <span className={styles.footerBrandName}>StudioFlow</span>
               </div>
-              <span className={styles.footerBrandName}>StudioFlow</span>
+
+              <p className={styles.footerTagline}>
+                Turning creator content into sellable digital products, powered by AI.
+              </p>
             </div>
 
-            <p className={styles.footerTagline}>
-              Turning creator content into sellable digital products, powered by AI.
+            {/* Column 2: Navigation */}
+            <div className={styles.footerNavCol}>
+              <h3 className={styles.footerColHeading}>Navigation</h3>
+              <Link href="/#how-it-works" className={styles.footerLink}>How It Works</Link>
+              <Link href="/#features" className={styles.footerLink}>Features</Link>
+              <Link href="/#testimonials" className={styles.footerLink}>Testimonials</Link>
+              <Link href="/#pricing" className={styles.footerLink}>Pricing</Link>
+            </div>
+
+            {/* Column 3: Pages */}
+            <div className={styles.footerNavCol}>
+              <h3 className={styles.footerColHeading}>Pages</h3>
+              <Link href="/" className={styles.footerLink}>Home</Link>
+              <Link href="/dashboard" className={styles.footerLink}>Dashboard</Link>
+              <Link href="/terms" className={styles.footerLink}>Terms of Service</Link>
+              <Link href="/privacy" className={styles.footerLink}>Privacy Policy</Link>
+            </div>
+
+            {/* Column 4: Newsletter */}
+            <div className={styles.footerNewsletterCol}>
+              <h3 className={styles.footerColHeading}>Newsletter</h3>
+              <p className={styles.footerNewsletterText}>
+                Join our newsletter and get notified about product updates.
+              </p>
+              <form
+                className={styles.footerNewsletterForm}
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  setNewsletterSubscribed(true);
+                }}
+              >
+                <input
+                  type="email"
+                  required
+                  placeholder="Enter your email..."
+                  className={styles.footerNewsletterInput}
+                  disabled={newsletterSubscribed}
+                />
+                <button type="submit" className={styles.footerNewsletterButton} disabled={newsletterSubscribed}>
+                  {newsletterSubscribed ? 'Subscribed' : 'Subscribe'}
+                </button>
+              </form>
+            </div>
+
+          </div>
+
+          {/* Compliance disclaimers row */}
+          <div className={styles.footerComplianceRow}>
+            <p className={styles.footerComplianceText}>
+              &copy; 2026 StudioFlow. All rights reserved.
+            </p>
+            <p className={styles.footerComplianceText}>
+              Everything you create with StudioFlow is yours to keep, sell, or share (non-exclusive license). Your data, your rules — access, export, or delete it anytime.
             </p>
           </div>
-
-          {/* Column 2: Navigation */}
-          <div className={styles.footerNavCol}>
-            <h3 className={styles.footerColHeading}>Navigation</h3>
-            <Link href="/#how-it-works" className={styles.footerLink}>How It Works</Link>
-            <Link href="/#features" className={styles.footerLink}>Features</Link>
-            <Link href="/#testimonials" className={styles.footerLink}>Testimonials</Link>
-            <Link href="/#pricing" className={styles.footerLink}>Pricing</Link>
-          </div>
-
-          {/* Column 3: Pages */}
-          <div className={styles.footerNavCol}>
-            <h3 className={styles.footerColHeading}>Pages</h3>
-            <Link href="/" className={styles.footerLink}>Home</Link>
-            <Link href="/dashboard" className={styles.footerLink}>Dashboard</Link>
-            <Link href="/terms" className={styles.footerLink}>Terms of Service</Link>
-            <Link href="/privacy" className={styles.footerLink}>Privacy Policy</Link>
-          </div>
-
-          {/* Column 4: Newsletter */}
-          <div className={styles.footerNewsletterCol}>
-            <h3 className={styles.footerColHeading}>Newsletter</h3>
-            <p className={styles.footerNewsletterText}>
-              Join our newsletter and get notified about product updates.
-            </p>
-            <form
-              className={styles.footerNewsletterForm}
-              onSubmit={(e) => {
-                e.preventDefault();
-                setNewsletterSubscribed(true);
-              }}
-            >
-              <input
-                type="email"
-                required
-                placeholder="Enter your email..."
-                className={styles.footerNewsletterInput}
-                disabled={newsletterSubscribed}
-              />
-              <button type="submit" className={styles.footerNewsletterButton} disabled={newsletterSubscribed}>
-                {newsletterSubscribed ? 'Subscribed' : 'Subscribe'}
-              </button>
-            </form>
-          </div>
-
-        </div>
-
-        {/* Compliance disclaimers row */}
-        <div className={styles.footerComplianceRow}>
-          <p className={styles.footerComplianceText}>
-            &copy; 2026 StudioFlow. All rights reserved.
-          </p>
-          <p className={styles.footerComplianceText}>
-            Everything you create with StudioFlow is yours to keep, sell, or share (non-exclusive license). Your data, your rules — access, export, or delete it anytime.
-          </p>
-        </div>
 
 
       </footer>
