@@ -190,7 +190,7 @@ Write the full post body perfectly tailored for this platform. If it's X, use th
   } catch (error: any) {
     console.error('ContentCrafter Error:', error);
     return NextResponse.json({ 
-      error: error.stack || error.toString() || 'Failed to craft content',
+      error: 'Failed to generate content. Please try again.',
       meta: { fallback_used: true }
     }, { status: 500 });
   }

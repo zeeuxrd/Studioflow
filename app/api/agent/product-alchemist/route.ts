@@ -192,7 +192,7 @@ Provide a catchy title and suggest a realistic selling price in Nigerian Naira (
   } catch (error: any) {
     console.error("ProductAlchemist Error:", error);
     return NextResponse.json({ 
-      error: error.stack || error.toString() || "Failed to create product",
+      error: "Failed to create product. Please try again.",
       meta: { fallback_used: true }
     }, { status: 500 });
   }
