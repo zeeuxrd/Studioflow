@@ -314,15 +314,15 @@ function DashboardContent() {
     };
   }, [userId]);
 
-  if (status === "loading" || !userId) {
-    return <div style={{ color: "var(--color-on-surface-variant)", padding: "2rem", textAlign: "center" }}>Loading...</div>;
-  }
-
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [turns, isGenerating, isCrafting, isProductizing]);
+
+  if (status === "loading" || !userId) {
+    return <div style={{ color: "var(--color-on-surface-variant)", padding: "2rem", textAlign: "center" }}>Loading...</div>;
+  }
 
   const handleGenerateIdeas = async (topicPrompt: string) => {
     if (!topicPrompt.trim() || !userId) return;
