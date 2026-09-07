@@ -61,7 +61,6 @@ export default function SignInPage() {
   return (
     <div className={styles.container}>
       <div className={styles.card}>
-        <p className={styles.formLabel}>Sign in</p>
         <h1 className={styles.title}>Welcome Back</h1>
         <p className={styles.subtitle}>Sign in to continue to Studioflow</p>
         {error && <div className={styles.errorContainer}>{error}</div>}
